@@ -17,7 +17,7 @@ npm run db:migrate
 npm run dev
 ```
 
-Vite روی `0.0.0.0:5173` و NestJS روی `0.0.0.0:3001` گوش می‌دهند. صفحهٔ وب را در `http://localhost:5173` و endpoint سلامت را در `http://localhost:3001/api/v1/health` ببینید. Vite درخواست‌های `/api/*` را به مقدار `VITE_API_PROXY_TARGET` می‌فرستد.
+Vite روی `0.0.0.0:5173` و NestJS روی `0.0.0.0:3001` گوش می‌دهند. صفحهٔ وب را در `http://localhost:5173` و endpoint سلامت را در `http://localhost:3001/api/v1/health` ببینید. Vite درخواست‌های `/api/*` را به مقدار `VITE_API_PROXY_TARGET` می‌فرستد. برای مشاهدهٔ صرف پوستهٔ RTL و داشبورد mock، `npm run dev:web` کافی است و به PostgreSQL نیاز ندارد؛ نشانگر اتصال API بدون API در دسترس آفلاین می‌ماند.
 
 API بدون اتصال اولیه به PostgreSQL می‌تواند بالا بیاید؛ endpoint سلامت یک `SELECT 1` می‌زند و هنگام در دسترس نبودن DB پاسخ `503` با قرارداد خطای مشترک می‌دهد.
 
@@ -60,7 +60,7 @@ npm run test:database
 npm run build
 ```
 
-`npm test` شامل تست HTTP برای بالا آمدن NestJS، قرارداد health/error و تست routeهای وب است؛ برای این تست‌ها PostgreSQL واقعی لازم نیست. `npm run test:database` اتصال واقعی با `pg`, اجرای migration و idempotency آن را بررسی می‌کند.
+`npm test` شامل تست HTTP برای بالا آمدن NestJS، قرارداد health/error، routeهای وب و تست‌های Vitest/Testing Library برای اجزای رابط کاربری است؛ برای این تست‌ها PostgreSQL واقعی لازم نیست. `npm run test:database` اتصال واقعی با `pg`, اجرای migration و idempotency آن را بررسی می‌کند.
 
 برای اجرای مجموعهٔ کامل Phase 0 (به‌همراه تست دیتابیس):
 
@@ -73,4 +73,5 @@ npm run test:phase0
 - قابلیت جدید را ابتدا در ماژول مربوطه بسازید؛ controller محل انباشتن business logic نیست.
 - هر تغییر schema باید migration مستقل، نسخه‌بندی‌شده و قابل‌تکرار داشته باشد.
 - ورودی کلاینت معتبر فرض نمی‌شود. queryهای متغیردار باید با placeholderهای `pg` پارامتری شوند.
-- در Phase 0 کد احراز هویت یا جدول‌های کسب‌وکار وجود ندارد؛ فرم ورود فقط placeholder است.
+- پوستهٔ فعلی Phase 1 شامل ورود واقعی یا جدول‌های کسب‌وکار نیست؛ فرم ورود فقط placeholder و داشبورد صرفاً حاوی mock data است.
+- مؤلفه‌های رابط کاربری باید از توکن‌های معنایی، ویژگی‌های دسترس‌پذیری و جهت منطقی CSS استفاده کنند؛ دادهٔ نمونه را خارج از کامپوننت‌های ارائه نگه دارید.

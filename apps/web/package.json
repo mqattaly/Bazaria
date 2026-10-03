@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@bazariya/shared": "0.0.0",
+    "@fontsource-variable/vazirmatn": "^5.3.0",
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.104.1",
     "react": "^19.3.0",
