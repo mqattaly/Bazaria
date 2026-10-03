@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { getEnvironmentFilePaths } from './config/env-paths.js';
 import { validateEnvironment } from './config/environment.js';
 import { HealthModule } from './health/health.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { HealthModule } from './health/health.module.js';
       validate: validateEnvironment,
     }),
     HealthModule,
+    CatalogModule,
   ],
 })
 export class AppModule {}

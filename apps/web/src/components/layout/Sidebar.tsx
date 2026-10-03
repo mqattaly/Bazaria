@@ -10,8 +10,9 @@ interface NavigationItem {
 
 const navigationItems: readonly NavigationItem[] = [
   { label: 'داشبورد', icon: 'dashboard', to: '/dashboard' },
+  { label: 'محصولات', icon: 'box', to: '/products' },
+  { label: 'دسته‌بندی‌ها', icon: 'sparkles', to: '/categories' },
   { label: 'فروش', icon: 'sales' },
-  { label: 'محصولات', icon: 'box' },
   { label: 'مشتریان', icon: 'users' },
   { label: 'انبار', icon: 'warehouse' },
   { label: 'گزارش‌ها', icon: 'chart' },

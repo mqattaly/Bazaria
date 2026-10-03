@@ -22,7 +22,8 @@
     "test": "npm run build:shared && npm run test --workspace @bazariya/api && npm run test --workspace @bazariya/web",
     "test:database": "npm run test:database --workspace @bazariya/api",
     "test:phase0": "npm run lint && npm run typecheck && npm test && npm run test:database && npm run build",
-    "db:migrate": "npm run migrate --workspace @bazariya/api"
+    "db:migrate": "npm run migrate --workspace @bazariya/api",
+    "db:seed": "npm run seed --workspace @bazariya/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

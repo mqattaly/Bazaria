@@ -12,6 +12,7 @@
     "lint": "eslint src test scripts",
     "test": "tsc -p tsconfig.test.json && node --test dist-test/test/http/*.test.js",
     "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
     "test:database": "tsx scripts/test-database.ts"
   },
   "dependencies": {

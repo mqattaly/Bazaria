@@ -17,6 +17,17 @@ interface ExceptionBody {
   message?: string | string[];
 }
 
+function isApiError(value: unknown): value is ApiError {
+  if (typeof value !== 'object' || value === null || !('error' in value)) return false;
+  const error = value.error;
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && typeof error.code === 'string'
+    && 'message' in error
+    && typeof error.message === 'string';
+}
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
@@ -29,6 +40,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
       this.logger.error('Unhandled request exception', exception instanceof Error ? exception.stack : String(exception));
     }
     const body = exception instanceof HttpException ? exception.getResponse() : undefined;
+    if (isApiError(body)) {
+      response.status(status).json(body);
+      return;
+    }
     const exceptionBody = typeof body === 'object' && body !== null ? (body as ExceptionBody) : undefined;
     const validationMessages = Array.isArray(exceptionBody?.message) ? exceptionBody.message : [];
     const message =

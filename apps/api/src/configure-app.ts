@@ -1,6 +1,7 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import helmet from 'helmet';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter.js';
+import { createValidationException } from './common/errors/validation-exception.js';
 
 export function configureApp(app: INestApplication, webOrigin: string): void {
   app.setGlobalPrefix('api/v1');
@@ -17,6 +18,7 @@ export function configureApp(app: INestApplication, webOrigin: string): void {
       forbidNonWhitelisted: true,
       transformOptions: { enableImplicitConversion: false },
       validationError: { target: false, value: false },
+      exceptionFactory: createValidationException,
     }),
   );
   app.useGlobalFilters(new ApiExceptionFilter());
