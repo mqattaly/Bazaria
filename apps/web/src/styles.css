@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+
+:root {
+  font-family: Vazirmatn, Tahoma, 'Segoe UI', sans-serif;
+  color: #0f172a;
+  background: #f7f8f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.surface-card {
+  border: 1px solid rgb(231 229 228 / 90%);
+  border-radius: 1.5rem;
+  background: white;
+  box-shadow: 0 24px 70px -48px rgb(15 23 42 / 26%);
+}
+
+.brand-mark {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: #0f766e;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.eyebrow {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  padding: 0.35rem 0.8rem;
+  color: #166534;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.button-primary {
+  background: #0f766e;
+  color: white;
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #115e59;
+  transform: translateY(-1px);
+}
+
+.button-secondary {
+  border: 1px solid #e7e5e4;
+  background: white;
+  color: #334155;
+}
+
+.button-secondary:hover {
+  background: #f5f5f4;
+}
+
+.form-label {
+  display: grid;
+  gap: 0.6rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.form-input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid #d6d3d1;
+  border-radius: 0.8rem;
+  background: white;
+  padding: 0.7rem 0.9rem;
+  color: #0f172a;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.form-input:focus-visible {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgb(15 118 110 / 14%);
+}
+
+:focus-visible {
+  outline: 3px solid rgb(15 118 110 / 55%);
+  outline-offset: 3px;
+}

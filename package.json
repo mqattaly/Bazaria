@@ -1,0 +1,36 @@
+{
+  "name": "bazariya",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.3",
+    "npm": ">=10.9.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build:shared && concurrently -k -n api,web -c cyan,green \"npm run dev --workspace @bazariya/api\" \"npm run dev --workspace @bazariya/web\"",
+    "dev:api": "npm run dev --workspace @bazariya/api",
+    "dev:web": "npm run dev --workspace @bazariya/web",
+    "build:shared": "npm run build --workspace @bazariya/shared",
+    "build": "npm run build:shared && npm run build --workspace @bazariya/api && npm run build --workspace @bazariya/web",
+    "typecheck": "npm run build:shared && npm run typecheck --workspace @bazariya/shared && npm run typecheck --workspace @bazariya/api && npm run typecheck --workspace @bazariya/web",
+    "lint": "eslint .",
+    "test": "npm run build:shared && npm run test --workspace @bazariya/api && npm run test --workspace @bazariya/web",
+    "test:database": "npm run test:database --workspace @bazariya/api",
+    "test:phase0": "npm run lint && npm run typecheck && npm test && npm run test:database && npm run build",
+    "db:migrate": "npm run migrate --workspace @bazariya/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0"
+  }
+}
