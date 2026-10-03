@@ -111,6 +111,43 @@ export interface ProductListQuery {
   pageSize: number;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomerInput {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  description?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateCustomerInput {
+  name?: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  description?: string | null;
+  isActive?: boolean;
+}
+
+export interface CustomerListQuery {
+  search?: string;
+  isActive?: boolean;
+  page: number;
+  pageSize: number;
+}
+
 export interface PaginationInfo {
   page: number;
   pageSize: number;

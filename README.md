@@ -1,6 +1,6 @@
 # بازاریا | Bazariya
 
-پایهٔ توسعهٔ بازاریا برای مدیریت فروش میدانی. مخزن زیرساخت **Phase 0**، بنیاد رابط کاربری **Phase 1** و دامنهٔ محدود کاتالوگ **Phase 2** را نگه می‌دارد: پوستهٔ فارسی و راست‌به‌چپ، داشبورد نمایشی، و مدیریت واقعی محصول و دسته‌بندی با API و PostgreSQL. داشبورد همچنان دادهٔ نمونه دارد؛ ورود واقعی و دیگر جریان‌های کسب‌وکار پیاده‌سازی نشده‌اند.
+پایهٔ توسعهٔ بازاریا برای مدیریت فروش میدانی. مخزن زیرساخت **Phase 0**، بنیاد رابط کاربری **Phase 1**، دامنهٔ محدود کاتالوگ **Phase 2** و مدیریت مستقل مشتریان **Phase 3** را نگه می‌دارد: پوستهٔ فارسی و راست‌به‌چپ، داشبورد نمایشی، مدیریت واقعی محصول و دسته‌بندی، و CRUD مشتریان. داشبورد همچنان دادهٔ نمونه دارد؛ ورود واقعی و دیگر جریان‌های کسب‌وکار پیاده‌سازی نشده‌اند.
 
 ## فناوری‌ها
 
@@ -21,7 +21,7 @@ npm install
 cp .env.example .env
 docker compose -f docker/compose.yml up -d
 npm run db:migrate
-NODE_ENV=development npm run db:seed  # اختیاری؛ دادهٔ نمونهٔ کاتالوگ
+NODE_ENV=development npm run db:seed  # اختیاری؛ دادهٔ نمونهٔ کاتالوگ و مشتری
 npm run dev
 ```
 
@@ -41,7 +41,7 @@ npm run dev:web
 npm run dev:web       # فقط وب
 npm run dev:api       # فقط API (برای توسعهٔ ترکیبی از npm run dev استفاده کنید)
 npm run db:migrate    # اجرای migrationهای منتظر
-npm run db:seed       # seed کاتالوگ در NODE_ENV=development
+npm run db:seed       # seed نمونه در NODE_ENV=development
 npm run lint          # ESLint
 npm run typecheck     # بررسی TypeScript در همهٔ workspaces
 npm test              # تست‌های API و وب؛ بدون نیاز به PostgreSQL
@@ -50,7 +50,7 @@ npm run build         # build پکیج مشترک، API و وب
 npm run test:phase0   # بررسی کامل Foundation و تست PostgreSQL
 ```
 
-`npm run test:database` و `npm run test:phase0` به `DATABASE_URL` معتبر و یک PostgreSQL در دسترس نیاز دارند. تست دیتابیس، migrationها و محدودیت‌های PostgreSQL کاتالوگ را بررسی می‌کند؛ آن را روی دیتابیس توسعه/آزمایشی جداگانه اجرا کنید. seed نیز فقط برای `NODE_ENV=development` مجاز است. جزئیات در [`docs/development.md`](docs/development.md) و [`database/seeds/README.md`](database/seeds/README.md) آمده است.
+`npm run test:database` و `npm run test:phase0` به `DATABASE_URL` معتبر و یک PostgreSQL در دسترس نیاز دارند. تست دیتابیس migrationها و محدودیت‌های PostgreSQL کاتالوگ و مشتری را بررسی می‌کند؛ آن را روی دیتابیس توسعه/آزمایشی جداگانه اجرا کنید. seed نیز فقط برای `NODE_ENV=development` مجاز است. جزئیات در [`docs/development.md`](docs/development.md) و [`database/seeds/README.md`](database/seeds/README.md) آمده است.
 
 ## مستندات
 
@@ -59,4 +59,4 @@ npm run test:phase0   # بررسی کامل Foundation و تست PostgreSQL
 
 ## محدودهٔ فعلی
 
-پوستهٔ واکنش‌گرا، ناوبری RTL، تم روشن/تیره، اجزای پایهٔ رابط کاربری و داشبورد mock در Phase 1 پیاده‌سازی شده‌اند. Phase 2 فقط مدیریت محصول و دسته‌بندی تخت را اضافه می‌کند: `/products`, `/products/:id`, `/categories` و APIهای `/api/v1/products` و `/api/v1/categories`. داشبورد هنوز دادهٔ نمایشی دارد. ورود واقعی، کاربران و نقش‌ها، tenantها، مشتریان، انبار و گردش موجودی، سفارش و فروش، خرید و تأمین‌کننده، فاکتور و حسابداری و گزارش‌های عملیاتی خارج از محدوده‌اند.
+پوستهٔ واکنش‌گرا، ناوبری RTL، تم روشن/تیره، اجزای پایهٔ رابط کاربری و داشبورد mock در Phase 1 پیاده‌سازی شده‌اند. Phase 2 مدیریت محصول و دسته‌بندی تخت را اضافه می‌کند: `/products`, `/products/:id`, `/categories` و APIهای `/api/v1/products` و `/api/v1/categories`. Phase 3 فقط Customer مستقل را اضافه می‌کند: `/customers`, `/customers/:id` و `/api/v1/customers`; هیچ رابطه‌ای به کاتالوگ یا دامنه‌های آینده ندارد. داشبورد هنوز دادهٔ نمایشی دارد. ورود واقعی، کاربران و نقش‌ها، tenantها، انبار و گردش موجودی، سفارش و فروش، خرید و تأمین‌کننده، فاکتور و حسابداری و گزارش‌های عملیاتی خارج از محدوده‌اند.

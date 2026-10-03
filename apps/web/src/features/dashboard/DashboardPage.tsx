@@ -36,7 +36,7 @@ export function DashboardPage() {
             <h2 className="text-base font-bold text-foreground" id="quick-actions-title">دسترسی سریع</h2>
             <p className="mt-1 text-xs text-muted">میانبرها برای دسترسی آسان‌تر آماده شده‌اند.</p>
           </div>
-          <span className="text-[0.68rem] text-muted">میانبر ثبت محصول فعال است؛ سایر عملیات در فازهای بعدی می‌آیند.</span>
+          <span className="text-[0.68rem] text-muted">میانبر ثبت محصول و مشتری فعال است؛ سایر عملیات در فازهای بعدی می‌آیند.</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {dashboardQuickActions.map((action) => (
@@ -46,6 +46,10 @@ export function DashboardPage() {
                 onClick={() => {
                   if (action.id === 'new-product') {
                     navigate('/products?create=1');
+                    return;
+                  }
+                  if (action.id === 'new-customer') {
+                    navigate('/customers?create=1');
                     return;
                   }
                   toast.info('این میانبر هنوز فعال نیست', 'قابلیت‌های عملیاتی در فازهای بعدی اضافه می‌شوند.');

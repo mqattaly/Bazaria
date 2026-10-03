@@ -4,6 +4,7 @@ import { getEnvironmentFilePaths } from './config/env-paths.js';
 import { validateEnvironment } from './config/environment.js';
 import { HealthModule } from './health/health.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { CustomersModule } from './customers/customers.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CatalogModule } from './catalog/catalog.module.js';
     }),
     HealthModule,
     CatalogModule,
+    CustomersModule,
   ],
 })
 export class AppModule {}

@@ -135,6 +135,67 @@ async function verifyCatalogConstraints(pool: Pool): Promise<void> {
   }
 }
 
+async function verifyCustomerConstraints(pool: Pool): Promise<void> {
+  const name = `Phase 3 customer ${randomUUID()}`;
+
+  await pool.query('BEGIN');
+  try {
+    const customerResult = await pool.query<{
+      id: string;
+      is_active: boolean;
+      created_at: Date;
+      updated_at: Date;
+    }>(
+      `INSERT INTO bazariya.customers (name, phone, email)
+       VALUES ($1, $2, $3)
+       RETURNING id, is_active, created_at, updated_at`,
+      [name, '09121234567', 'customer@example.com'],
+    );
+    const customer = customerResult.rows[0];
+    assert.ok(customer?.id, 'Customer insert did not return an id.');
+    assert.equal(customer.is_active, true, 'Customer active status should default to true.');
+    assert.ok(customer.created_at instanceof Date, 'Customer created_at should be a timestamp.');
+    assert.ok(customer.updated_at instanceof Date, 'Customer updated_at should be a timestamp.');
+
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.customers (name) VALUES ($1)',
+      [` ${name} `],
+      '23514',
+      'customers_name_trimmed',
+      10,
+    );
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.customers (name) VALUES ($1)',
+      ['A'],
+      '23514',
+      'customers_name_length',
+      11,
+    );
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.customers (name, phone) VALUES ($1, $2)',
+      [`Invalid phone ${randomUUID()}`, 'not-a-phone'],
+      '23514',
+      'customers_phone_valid',
+      12,
+    );
+
+    const secondCustomer = await pool.query(
+      'INSERT INTO bazariya.customers (name, phone) VALUES ($1, $2)',
+      [`Second customer ${randomUUID()}`, '09121234567'],
+    );
+    assert.equal(secondCustomer.rowCount, 1, 'Phone numbers should not be unique.');
+    await pool.query(
+      'UPDATE bazariya.customers SET phone = NULL, email = NULL WHERE id = $1',
+      [customer.id],
+    );
+  } finally {
+    await pool.query('ROLLBACK');
+  }
+}
+
 async function main(): Promise<void> {
   loadDotenv({ path: getEnvironmentFilePaths() });
   const environment = parseEnvironment(process.env);
@@ -167,19 +228,21 @@ async function main(): Promise<void> {
     const tables = await pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'bazariya' AND table_name = ANY($1::text[])`,
-      [['categories', 'products']],
+      [['categories', 'products', 'customers']],
     );
-    const catalogTables = new Set(tables.rows.map((row) => row.table_name));
+    const domainTables = new Set(tables.rows.map((row) => row.table_name));
 
     if (missing.length > 0) {
       throw new Error(`Migration tracking is missing: ${missing.join(', ')}`);
     }
-    if (catalogTables.size !== 2 || !catalogTables.has('categories') || !catalogTables.has('products')) {
-      throw new Error('The catalog migration did not create both domain tables.');
+    if (domainTables.size !== 3 || !domainTables.has('categories') || !domainTables.has('products') || !domainTables.has('customers')) {
+      throw new Error('The versioned migrations did not create the expected catalog and customer domain tables.');
     }
 
     await verifyCatalogConstraints(pool);
     console.info('Catalog constraints: PASS (trimmed/case-insensitive names, canonical trimmed SKU, unique SKU, non-negative price, valid unit, and RESTRICT delete)');
+    await verifyCustomerConstraints(pool);
+    console.info('Customer constraints: PASS (trimmed bounded name, optional normalized-format phone, reusable phone numbers, active/timestamp defaults, and nullable contact fields)');
 
     const appliedCount = firstRun.applied.length;
     console.info(

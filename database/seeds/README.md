@@ -1,12 +1,17 @@
 # Database seeds
 
-`0001_phase2_catalog.sql` contains small, deterministic development fixtures for the Phase 2 Category and Product domains only. It is idempotent for categories and product SKUs and must not be treated as production data.
+The SQL files contain small, deterministic development fixtures only:
 
-Run it only with `NODE_ENV=development` after applying migrations:
+- `0001_phase2_catalog.sql`: four Category and six Product examples.
+- `0002_phase3_customers.sql`: three independent Customer examples.
+
+Both seeds are idempotent and are not production data. Customer rows have no relationship to Products, Categories, sales, or other future domains.
+
+Run only with `NODE_ENV=development` after applying migrations:
 
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
 
-The seed runner refuses other environments. It adds four common shop categories and six example products; it does not create sales, customers, inventory, purchasing, or accounting data.
+The seed runner refuses other environments. It loads the catalog and customer fixtures in one transaction; it does not create sales, orders, inventory, purchasing, invoices, or accounting data.

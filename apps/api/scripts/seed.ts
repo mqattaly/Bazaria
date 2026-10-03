@@ -12,16 +12,19 @@ async function main(): Promise<void> {
     throw new Error('Development seed data can only be loaded when NODE_ENV=development.');
   }
 
-  const seedFile = fileURLToPath(new URL('../../../database/seeds/0001_phase2_catalog.sql', import.meta.url));
-  const seedSql = await readFile(seedFile, 'utf8');
+  const seedFiles = [
+    '../../../database/seeds/0001_phase2_catalog.sql',
+    '../../../database/seeds/0002_phase3_customers.sql',
+  ].map((path) => fileURLToPath(new URL(path, import.meta.url)));
+  const seedSql = await Promise.all(seedFiles.map((path) => readFile(path, 'utf8')));
   const pool = new Pool({ connectionString: environment.DATABASE_URL, max: 1 });
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
-    await client.query(seedSql);
+    for (const sql of seedSql) await client.query(sql);
     await client.query('COMMIT');
-    console.info('Development catalog seed: PASS (4 categories and 6 products; existing SKUs are kept).');
+    console.info('Development seed: PASS (4 categories, 6 products, and 3 customers; existing fixture IDs and SKUs are kept).');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw error;

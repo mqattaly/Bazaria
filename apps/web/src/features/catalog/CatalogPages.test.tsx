@@ -317,6 +317,7 @@ describe('Product and category UI', () => {
     await screen.findByRole('option', { name: 'ظروف یکبار مصرف' });
     fireEvent.click(screen.getAllByRole('button', { name: /افزودن محصول/ })[0]!);
     await screen.findByRole('dialog', { name: 'افزودن محصول' });
+    await waitFor(() => expect(screen.getByLabelText('نام محصول *')).toHaveFocus());
 
     fireEvent.change(screen.getByLabelText('نام محصول *'), { target: { value: '  فنجان سرامیکی  ' } });
     fireEvent.change(screen.getByLabelText('کد کالا *'), { target: { value: ' fn-100 ' } });
@@ -341,6 +342,7 @@ describe('Product and category UI', () => {
     await screen.findByRole('option', { name: 'ظروف یکبار مصرف' });
     fireEvent.click(screen.getAllByRole('button', { name: /افزودن محصول/ })[0]!);
     await screen.findByRole('dialog', { name: 'افزودن محصول' });
+    await waitFor(() => expect(screen.getByLabelText('نام محصول *')).toHaveFocus());
 
     fireEvent.change(screen.getByLabelText('نام محصول *'), { target: { value: 'محصول جدید' } });
     fireEvent.change(screen.getByLabelText('کد کالا *'), { target: { value: 'dup-01' } });
