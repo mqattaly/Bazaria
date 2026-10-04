@@ -9,6 +9,8 @@ import { CustomersPage } from './features/customers/CustomersPage';
 import { OrderDetailsPage } from './features/orders/OrderDetailsPage';
 import { NewOrderPage } from './features/orders/NewOrderPage';
 import { OrdersPage } from './features/orders/OrdersPage';
+import { InventoryPage } from './features/inventory/InventoryPage';
+import { InventoryDetailsPage } from './features/inventory/InventoryDetailsPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -27,6 +29,8 @@ export function AppRoutes() {
         <Route element={<OrdersPage />} path="orders" />
         <Route element={<NewOrderPage />} path="orders/new" />
         <Route element={<OrderDetailsPage />} path="orders/:id" />
+        <Route element={<InventoryPage />} path="inventory" />
+        <Route element={<InventoryDetailsPage />} path="inventory/:productId" />
         <Route element={<NotFoundPage />} path="*" />
       </Route>
       <Route element={<Navigate replace to="/dashboard" />} path="/app" />

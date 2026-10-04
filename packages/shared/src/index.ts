@@ -229,6 +229,73 @@ export interface OrderListQuery {
   pageSize: number;
 }
 
+export const STOCK_MOVEMENT_TYPES = ['IN', 'OUT', 'ADJUSTMENT'] as const;
+export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
+
+export const INVENTORY_STATUSES = ['in-stock', 'low-stock', 'out-of-stock'] as const;
+export type InventoryStatus = (typeof INVENTORY_STATUSES)[number];
+
+export interface InventoryProductSummary {
+  id: string;
+  name: string;
+  sku: string;
+  unit: ProductUnit;
+  isActive: boolean;
+}
+
+export interface InventoryItem {
+  product: InventoryProductSummary;
+  quantity: number;
+  minimumQuantity: number;
+  isLowStock: boolean;
+  status: InventoryStatus;
+  updatedAt: string;
+}
+
+export interface InventoryListQuery {
+  search?: string;
+  status?: InventoryStatus;
+  lowStock?: boolean;
+  page: number;
+  pageSize: number;
+}
+
+export interface UpdateInventoryMinimumInput {
+  minimumQuantity: number;
+}
+
+export interface CreateStockMovementInput {
+  type: StockMovementType;
+  /** Positive units for IN/OUT; the final on-hand quantity for ADJUSTMENT. */
+  quantity: number;
+  note?: string | null;
+}
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  type: StockMovementType;
+  /** Movement delta for IN/OUT and the absolute delta for ADJUSTMENT. */
+  quantity: number;
+  beforeQuantity: number;
+  afterQuantity: number;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface CreateStockMovementResult {
+  inventory: InventoryItem;
+  movement: StockMovement;
+}
+
+export interface StockMovementListQuery {
+  type?: StockMovementType;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}
+
 export interface PaginationInfo {
   page: number;
   pageSize: number;

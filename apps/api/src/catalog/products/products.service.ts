@@ -71,9 +71,21 @@ export class ProductsService {
   }
 
   async delete(id: string): Promise<{ id: string }> {
-    const deleted = await this.products.delete(id);
-    if (!deleted) throw this.notFound();
-    return { id };
+    try {
+      const deleted = await this.products.delete(id);
+      if (!deleted) throw this.notFound();
+      return { id };
+    } catch (error) {
+      if (isPostgresError(error) && error.code === '23503' && error.constraint === 'stock_movements_product_id_fkey') {
+        throw new ConflictException({
+          error: {
+            code: 'PRODUCT_HAS_STOCK_HISTORY',
+            message: 'این محصول سابقهٔ گردش موجودی دارد و برای حفظ تاریخچه قابل حذف نیست.',
+          },
+        });
+      }
+      throw error;
+    }
   }
 
   private async assertCategoryExists(categoryId: string): Promise<void> {

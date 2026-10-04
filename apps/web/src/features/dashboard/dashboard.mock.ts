@@ -51,17 +51,6 @@ export const dashboardKpis: readonly DashboardKpi[] = [
     comparison: 'نسبت به دیروز',
   },
   {
-    id: 'inventory-items',
-    label: 'موجودی کالا',
-    value: 348,
-    unit: 'قلم',
-    icon: 'box',
-    changePercent: 4,
-    changeDirection: 'up',
-    changeTone: 'neutral',
-    comparison: 'نسبت به هفتهٔ قبل',
-  },
-  {
     id: 'receivables',
     label: 'مطالبات',
     value: 4_820_000,
@@ -78,6 +67,7 @@ export const dashboardQuickActions: readonly DashboardQuickAction[] = [
   { id: 'new-order', label: 'ثبت سفارش', description: 'ثبت یک سفارش جدید', icon: 'sales' },
   { id: 'new-product', label: 'افزودن محصول', description: 'افزودن محصول به فهرست', icon: 'box' },
   { id: 'new-customer', label: 'افزودن مشتری', description: 'ثبت اطلاعات مشتری', icon: 'users' },
+  { id: 'inventory', label: 'مدیریت موجودی', description: 'بررسی موجودی و گردش کالا', icon: 'warehouse' },
 ];
 
 export const dashboardRecentActivities: readonly DashboardActivity[] = [];

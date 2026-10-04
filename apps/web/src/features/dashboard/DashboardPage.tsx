@@ -26,7 +26,7 @@ export function DashboardPage() {
         title="داشبورد"
       />
 
-      <section aria-label="شاخص‌های نمونه" className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+      <section aria-label="شاخص‌های نمونه" className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
         {dashboardKpis.map((item) => <DashboardKpiCard item={item} key={item.id} />)}
       </section>
 
@@ -36,9 +36,9 @@ export function DashboardPage() {
             <h2 className="text-base font-bold text-foreground" id="quick-actions-title">دسترسی سریع</h2>
             <p className="mt-1 text-xs text-muted">میانبرها برای دسترسی آسان‌تر آماده شده‌اند.</p>
           </div>
-          <span className="text-[0.68rem] text-muted">میانبر ثبت سفارش، محصول و مشتری فعال است؛ شاخص‌های داشبورد همچنان نمایشی‌اند.</span>
+          <span className="text-[0.68rem] text-muted">میانبرهای سفارش، محصول، مشتری و موجودی فعال‌اند؛ شاخص‌های باقی‌ماندهٔ داشبورد همچنان نمایشی‌اند.</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dashboardQuickActions.map((action) => (
             <Card className="p-1.5" key={action.id} padded={false}>
               <Button
@@ -54,6 +54,10 @@ export function DashboardPage() {
                   }
                   if (action.id === 'new-customer') {
                     navigate('/customers?create=1');
+                    return;
+                  }
+                  if (action.id === 'inventory') {
+                    navigate('/inventory');
                     return;
                   }
                   toast.info('این میانبر هنوز فعال نیست', 'قابلیت‌های عملیاتی در فازهای بعدی اضافه می‌شوند.');

@@ -14,7 +14,7 @@ const navigationItems: readonly NavigationItem[] = [
   { label: 'دسته‌بندی‌ها', icon: 'sparkles', to: '/categories' },
   { label: 'سفارش‌ها', icon: 'sales', to: '/orders' },
   { label: 'مشتریان', icon: 'users', to: '/customers' },
-  { label: 'انبار', icon: 'warehouse' },
+  { label: 'انبار', icon: 'warehouse', to: '/inventory' },
   { label: 'گزارش‌ها', icon: 'chart' },
   { label: 'تنظیمات', icon: 'settings' },
 ];

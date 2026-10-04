@@ -468,6 +468,192 @@ async function verifyDeferredOrderTotals(pool: Pool): Promise<void> {
   assert.equal(caught.constraint, 'orders_item_subtotal_consistent');
 }
 
+async function verifyInventoryConstraints(pool: Pool): Promise<void> {
+  const categoryName = `Phase 5 inventory test ${randomUUID()}`;
+  const sku = `INV-${randomUUID().slice(0, 8).toUpperCase()}Z`;
+  const secondSku = `INV-${randomUUID().slice(0, 8).toUpperCase()}Z`;
+
+  await pool.query('BEGIN');
+  try {
+    const category = await pool.query<{ id: string }>(
+      'INSERT INTO bazariya.categories (name) VALUES ($1) RETURNING id',
+      [categoryName],
+    );
+    const categoryId = category.rows[0]?.id;
+    assert.ok(categoryId, 'Inventory test category insert did not return an id.');
+
+    const product = await pool.query<{ id: string }>(
+      `INSERT INTO bazariya.products (name, sku, category_id, unit, sale_price)
+       VALUES ('Inventory test item', $1, $2, 'piece', 100)
+       RETURNING id`,
+      [sku, categoryId],
+    );
+    const productId = product.rows[0]?.id;
+    assert.ok(productId, 'Inventory test product insert did not return an id.');
+
+    const inventory = await pool.query<{
+      quantity: string;
+      minimum_quantity: string;
+      updated_at: Date;
+    }>(
+      `INSERT INTO bazariya.inventory (product_id)
+       VALUES ($1)
+       RETURNING quantity::text AS quantity, minimum_quantity::text AS minimum_quantity, updated_at`,
+      [productId],
+    );
+    assert.equal(inventory.rows[0]?.quantity, '0', 'Inventory should default to zero stock.');
+    assert.equal(inventory.rows[0]?.minimum_quantity, '0', 'Inventory minimum should default to zero.');
+    assert.ok(inventory.rows[0]?.updated_at instanceof Date, 'Inventory updated_at should be a timestamp.');
+
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.inventory (product_id) VALUES ($1)',
+      [productId],
+      '23505',
+      'inventory_product_id_unique',
+      30,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.inventory SET quantity = -1 WHERE product_id = $1',
+      [productId],
+      '23514',
+      'inventory_quantity_nonnegative',
+      31,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.inventory SET minimum_quantity = -1 WHERE product_id = $1',
+      [productId],
+      '23514',
+      'inventory_minimum_nonnegative',
+      32,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.inventory SET quantity = $2 WHERE product_id = $1',
+      [productId, '9007199254740992'],
+      '23514',
+      'inventory_quantity_nonnegative',
+      41,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.inventory SET minimum_quantity = $2 WHERE product_id = $1',
+      [productId, '9007199254740992'],
+      '23514',
+      'inventory_minimum_nonnegative',
+      42,
+    );
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.inventory (product_id) VALUES ($1)',
+      [randomUUID()],
+      '23503',
+      'inventory_product_id_fkey',
+      33,
+    );
+
+    const movement = await pool.query<{ id: string }>(
+      `INSERT INTO bazariya.stock_movements (
+         product_id, type, quantity, before_quantity, after_quantity, note
+       ) VALUES ($1, 'IN', 5, 0, 5, 'opening stock')
+       RETURNING id`,
+      [productId],
+    );
+    const movementId = movement.rows[0]?.id;
+    assert.ok(movementId, 'Stock movement insert did not return an id.');
+
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.stock_movements (product_id, type, quantity, before_quantity, after_quantity)
+       VALUES ($1, 'RETURN', 1, 0, 1)`,
+      [productId],
+      '23514',
+      'stock_movements_type_valid',
+      34,
+    );
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.stock_movements (product_id, type, quantity, before_quantity, after_quantity)
+       VALUES ($1, 'IN', 0, 0, 0)`,
+      [productId],
+      '23514',
+      'stock_movements_values_consistent',
+      35,
+    );
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.stock_movements (product_id, type, quantity, before_quantity, after_quantity)
+       VALUES ($1, 'IN', 5, 0, 4)`,
+      [productId],
+      '23514',
+      'stock_movements_values_consistent',
+      36,
+    );
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.stock_movements (product_id, type, quantity, before_quantity, after_quantity)
+       VALUES ($1, 'IN', $2, 0, $2)`,
+      [productId, '9007199254740992'],
+      '23514',
+      'stock_movements_quantities_safe',
+      43,
+    );
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.stock_movements (product_id, type, quantity, before_quantity, after_quantity, note)
+       VALUES ($1, 'ADJUSTMENT', 0, 0, 0, '  ' )`,
+      [productId],
+      '23514',
+      'stock_movements_note_trimmed',
+      37,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.stock_movements SET note = $2 WHERE id = $1',
+      [movementId, 'changed history'],
+      '23514',
+      'stock_movements_immutable',
+      38,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.stock_movements WHERE id = $1',
+      [movementId],
+      '23514',
+      'stock_movements_immutable',
+      39,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.products WHERE id = $1',
+      [productId],
+      '23503',
+      'stock_movements_product_id_fkey',
+      40,
+    );
+
+    const secondProduct = await pool.query<{ id: string }>(
+      `INSERT INTO bazariya.products (name, sku, category_id, unit, sale_price)
+       VALUES ('Cascade inventory item', $1, $2, 'piece', 0)
+       RETURNING id`,
+      [secondSku, categoryId],
+    );
+    const secondProductId = secondProduct.rows[0]?.id;
+    assert.ok(secondProductId, 'Cascade test product insert did not return an id.');
+    await pool.query('INSERT INTO bazariya.inventory (product_id, quantity, minimum_quantity) VALUES ($1, 7, 2)', [secondProductId]);
+    await pool.query('DELETE FROM bazariya.products WHERE id = $1', [secondProductId]);
+    const cascadedInventory = await pool.query<{ count: string }>(
+      'SELECT count(*)::text AS count FROM bazariya.inventory WHERE product_id = $1',
+      [secondProductId],
+    );
+    assert.equal(cascadedInventory.rows[0]?.count, '0', 'Inventory state should cascade when a Product without stock history is deleted.');
+  } finally {
+    await pool.query('ROLLBACK');
+  }
+}
+
 async function main(): Promise<void> {
   loadDotenv({ path: getEnvironmentFilePaths() });
   const environment = parseEnvironment(process.env);
@@ -500,7 +686,7 @@ async function main(): Promise<void> {
     const tables = await pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'bazariya' AND table_name = ANY($1::text[])`,
-      [['categories', 'products', 'customers', 'orders', 'order_items']],
+      [['categories', 'products', 'customers', 'orders', 'order_items', 'inventory', 'stock_movements']],
     );
     const domainTables = new Set(tables.rows.map((row) => row.table_name));
 
@@ -508,14 +694,16 @@ async function main(): Promise<void> {
       throw new Error(`Migration tracking is missing: ${missing.join(', ')}`);
     }
     if (
-      domainTables.size !== 5
+      domainTables.size !== 7
       || !domainTables.has('categories')
       || !domainTables.has('products')
       || !domainTables.has('customers')
       || !domainTables.has('orders')
       || !domainTables.has('order_items')
+      || !domainTables.has('inventory')
+      || !domainTables.has('stock_movements')
     ) {
-      throw new Error('The versioned migrations did not create the expected catalog, customer, and order domain tables.');
+      throw new Error('The versioned migrations did not create the expected catalog, customer, order, and inventory domain tables.');
     }
 
     await verifyCatalogConstraints(pool);
@@ -526,6 +714,8 @@ async function main(): Promise<void> {
     console.info('Order constraints: PASS (unique server-style number, draft defaults, snapshot history, safe lifecycle, active item restrictions, optional customer SET NULL, and draft-only cascade)');
     await verifyDeferredOrderTotals(pool);
     console.info('Order totals: PASS (deferred item subtotal invariant is enforced at commit)');
+    await verifyInventoryConstraints(pool);
+    console.info('Inventory constraints: PASS (one bounded nonnegative record per Product, consistent immutable movement snapshots, safe Product delete behavior, and inventory-state cascade)');
 
     const appliedCount = firstRun.applied.length;
     console.info(
