@@ -148,6 +148,87 @@ export interface CustomerListQuery {
   pageSize: number;
 }
 
+export const ORDER_STATUSES = ['draft', 'confirmed', 'cancelled'] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export interface OrderItemInput {
+  productId: string;
+  quantity: number;
+}
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: ProductUnit;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface OrderCustomerSummary {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  customerId: string | null;
+  status: OrderStatus;
+  note: string | null;
+  subtotal: number;
+  discount: number;
+  total: number;
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt: string | null;
+  cancelledAt: string | null;
+}
+
+export interface OrderListItem extends Order {
+  customerName: string | null;
+  customerPhone: string | null;
+  itemCount: number;
+}
+
+export interface OrderDetails extends Order {
+  customer: OrderCustomerSummary | null;
+  items: OrderItem[];
+}
+
+export interface CreateOrderInput {
+  customerId?: string | null;
+  items: OrderItemInput[];
+  discount?: number;
+  note?: string | null;
+}
+
+export interface UpdateOrderInput {
+  customerId?: string | null;
+  items?: OrderItemInput[];
+  discount?: number;
+  note?: string | null;
+}
+
+export interface UpdateOrderStatusInput {
+  status: 'confirmed' | 'cancelled';
+}
+
+export interface OrderListQuery {
+  search?: string;
+  customerId?: string;
+  status?: OrderStatus;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}
+
 export interface PaginationInfo {
   page: number;
   pageSize: number;

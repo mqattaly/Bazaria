@@ -55,16 +55,17 @@ describe('Persian application shell', () => {
     expect(screen.getByText('اطلاعات نمایشی')).toBeInTheDocument();
     expect(screen.getByText('فروش امروز')).toBeInTheDocument();
     expect(screen.getByText('۱۲٬۸۵۰٬۰۰۰')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /ثبت فروش/ }));
-    expect(await screen.findByRole('status')).toHaveTextContent('این میانبر هنوز فعال نیست');
+    fireEvent.click(screen.getByRole('button', { name: /ثبت سفارش/ }));
+    expect(await screen.findByRole('heading', { name: 'ثبت سفارش جدید' })).toBeInTheDocument();
   });
 
-  it('opens mobile navigation and keeps future sections disabled', async () => {
+  it('opens mobile navigation with orders active while future sections remain disabled', async () => {
     renderRoute('/dashboard');
 
     fireEvent.click(screen.getByRole('button', { name: 'باز کردن منوی اصلی' }));
     expect(await screen.findByRole('dialog', { name: 'منوی اصلی' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /فروش/ }).some((button) => (button as HTMLButtonElement).disabled)).toBe(true);
+    expect(screen.getAllByRole('link', { name: 'سفارش‌ها' }).some((link) => link.getAttribute('href') === '/orders')).toBe(true);
+    expect(screen.getAllByRole('button', { name: /انبار/ }).some((button) => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
   it('persists the dark theme preference', async () => {

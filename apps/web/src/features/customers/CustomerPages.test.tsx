@@ -285,7 +285,7 @@ describe('Customer UI', () => {
     expect(await screen.findByRole('heading', { name: customer.name })).toBeInTheDocument();
     expect(screen.getByText('تهران، خیابان نمونه')).toBeInTheDocument();
     expect(screen.getByText('sara@example.com')).toBeInTheDocument();
-    expect(screen.queryByText('سفارش‌ها')).not.toBeInTheDocument();
+    expect(screen.queryByText('سفارش‌های مشتری')).not.toBeInTheDocument();
     expect(screen.queryByText('بدهی')).not.toBeInTheDocument();
     expect(screen.queryByText('پرداخت')).not.toBeInTheDocument();
     expect(screen.queryByText('موجودی')).not.toBeInTheDocument();

@@ -6,6 +6,9 @@ import { ProductDetailsPage } from './features/catalog/ProductDetailsPage';
 import { ProductsPage } from './features/catalog/ProductsPage';
 import { CustomerDetailsPage } from './features/customers/CustomerDetailsPage';
 import { CustomersPage } from './features/customers/CustomersPage';
+import { OrderDetailsPage } from './features/orders/OrderDetailsPage';
+import { NewOrderPage } from './features/orders/NewOrderPage';
+import { OrdersPage } from './features/orders/OrdersPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -21,6 +24,9 @@ export function AppRoutes() {
         <Route element={<CategoriesPage />} path="categories" />
         <Route element={<CustomersPage />} path="customers" />
         <Route element={<CustomerDetailsPage />} path="customers/:id" />
+        <Route element={<OrdersPage />} path="orders" />
+        <Route element={<NewOrderPage />} path="orders/new" />
+        <Route element={<OrderDetailsPage />} path="orders/:id" />
         <Route element={<NotFoundPage />} path="*" />
       </Route>
       <Route element={<Navigate replace to="/dashboard" />} path="/app" />

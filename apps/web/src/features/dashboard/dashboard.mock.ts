@@ -75,7 +75,7 @@ export const dashboardKpis: readonly DashboardKpi[] = [
 ];
 
 export const dashboardQuickActions: readonly DashboardQuickAction[] = [
-  { id: 'new-sale', label: 'ثبت فروش', description: 'ثبت یک فروش جدید', icon: 'sales' },
+  { id: 'new-order', label: 'ثبت سفارش', description: 'ثبت یک سفارش جدید', icon: 'sales' },
   { id: 'new-product', label: 'افزودن محصول', description: 'افزودن محصول به فهرست', icon: 'box' },
   { id: 'new-customer', label: 'افزودن مشتری', description: 'ثبت اطلاعات مشتری', icon: 'users' },
 ];

@@ -12,7 +12,7 @@ const navigationItems: readonly NavigationItem[] = [
   { label: 'داشبورد', icon: 'dashboard', to: '/dashboard' },
   { label: 'محصولات', icon: 'box', to: '/products' },
   { label: 'دسته‌بندی‌ها', icon: 'sparkles', to: '/categories' },
-  { label: 'فروش', icon: 'sales' },
+  { label: 'سفارش‌ها', icon: 'sales', to: '/orders' },
   { label: 'مشتریان', icon: 'users', to: '/customers' },
   { label: 'انبار', icon: 'warehouse' },
   { label: 'گزارش‌ها', icon: 'chart' },

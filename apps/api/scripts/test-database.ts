@@ -25,7 +25,7 @@ async function expectConstraint(
   expectedConstraint: string,
   index: number,
 ): Promise<void> {
-  const savepoint = `catalog_constraint_${index}`;
+  const savepoint = `domain_constraint_${index}`;
   await pool.query(`SAVEPOINT ${savepoint}`);
   let caught: unknown;
   try {
@@ -196,6 +196,278 @@ async function verifyCustomerConstraints(pool: Pool): Promise<void> {
   }
 }
 
+async function verifyOrderConstraints(pool: Pool): Promise<void> {
+  const categoryName = `Phase 4 order test ${randomUUID()}`;
+  const sku = `ORDER-${randomUUID().slice(0, 8).toUpperCase()}Z`;
+  const customerName = `Phase 4 customer ${randomUUID()}`;
+
+  await pool.query('BEGIN');
+  try {
+    const category = await pool.query<{ id: string }>(
+      'INSERT INTO bazariya.categories (name) VALUES ($1) RETURNING id',
+      [categoryName],
+    );
+    const categoryId = category.rows[0]?.id;
+    assert.ok(categoryId, 'Order test category insert did not return an id.');
+
+    const product = await pool.query<{ id: string }>(
+      `INSERT INTO bazariya.products (name, sku, category_id, unit, sale_price)
+       VALUES ('Order test tea', $1, $2, 'pack', 125000)
+       RETURNING id`,
+      [sku, categoryId],
+    );
+    const productId = product.rows[0]?.id;
+    assert.ok(productId, 'Order test product insert did not return an id.');
+
+    const customer = await pool.query<{ id: string }>(
+      'INSERT INTO bazariya.customers (name) VALUES ($1) RETURNING id',
+      [customerName],
+    );
+    const customerId = customer.rows[0]?.id;
+    assert.ok(customerId, 'Order test customer insert did not return an id.');
+
+    const sequence = await pool.query<{ value: string }>(
+      "SELECT nextval('bazariya.order_number_seq')::text AS value",
+    );
+    const orderNumber = `BAZ-${sequence.rows[0]?.value.padStart(9, '0')}`;
+    const orderResult = await pool.query<{
+      id: string;
+      status: string;
+      created_at: Date;
+      confirmed_at: Date | null;
+    }>(
+      `INSERT INTO bazariya.orders (order_number, customer_id, note)
+       VALUES ($1, $2, 'Original snapshot')
+       RETURNING id, status, created_at, confirmed_at`,
+      [orderNumber, customerId],
+    );
+    const order = orderResult.rows[0];
+    assert.ok(order?.id, 'Order insert did not return an id.');
+    assert.equal(order.status, 'draft', 'New orders should default to draft.');
+    assert.ok(order.created_at instanceof Date, 'Order created_at should be a timestamp.');
+    assert.equal(order.confirmed_at, null, 'Draft orders should not have a confirmation timestamp.');
+
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.orders (order_number) VALUES ($1)',
+      [orderNumber],
+      '23505',
+      'orders_order_number_key',
+      13,
+    );
+    await expectConstraint(
+      pool,
+      'INSERT INTO bazariya.orders (order_number) VALUES ($1)',
+      ['not-an-order-number'],
+      '23514',
+      'orders_order_number_valid',
+      14,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.orders SET discount = 1 WHERE id = $1',
+      [order.id],
+      '23514',
+      'orders_amounts_consistent',
+      15,
+    );
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.orders SET subtotal = $2, total = $2 WHERE id = $1',
+      [order.id, '9007199254740992'],
+      '23514',
+      'orders_amounts_safe',
+      16,
+    );
+
+    const insertItem = `
+      INSERT INTO bazariya.order_items (
+        order_id, product_id, product_name, sku, unit, quantity, unit_price, line_total
+      ) VALUES ($1, $2, $3, $4, 'pack', 2, 125000, 250000)
+    `;
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.order_items (
+         order_id, product_id, product_name, sku, unit, quantity, unit_price, line_total
+       ) VALUES ($1, $2, 'Invalid total', $3, 'pack', 2, 125000, 250001)`,
+      [order.id, productId, sku],
+      '23514',
+      'order_items_line_total_consistent',
+      17,
+    );
+    await pool.query(insertItem, [order.id, productId, 'Order test tea', sku]);
+    await pool.query(
+      'UPDATE bazariya.orders SET subtotal = 250000, discount = 10000, total = 240000 WHERE id = $1',
+      [order.id],
+    );
+    await pool.query('SET CONSTRAINTS ALL IMMEDIATE');
+    await pool.query('SET CONSTRAINTS ALL DEFERRED');
+    await pool.query("UPDATE bazariya.products SET name = 'Updated tea', sale_price = 150000 WHERE id = $1", [productId]);
+    const snapshot = await pool.query<{ product_name: string; sku: string; unit: string; unit_price: string }>(
+      `SELECT product_name, sku, unit, unit_price::text AS unit_price
+       FROM bazariya.order_items WHERE order_id = $1`,
+      [order.id],
+    );
+    assert.deepEqual(snapshot.rows[0], {
+      product_name: 'Order test tea',
+      sku,
+      unit: 'pack',
+      unit_price: '125000',
+    }, 'Order item fields and price should remain snapshots after product updates.');
+
+    await pool.query("UPDATE bazariya.orders SET status = 'confirmed' WHERE id = $1", [order.id]);
+    const confirmed = await pool.query<{ status: string; confirmed_at: Date | null }>(
+      'SELECT status, confirmed_at FROM bazariya.orders WHERE id = $1',
+      [order.id],
+    );
+    assert.equal(confirmed.rows[0]?.status, 'confirmed');
+    assert.ok(confirmed.rows[0]?.confirmed_at instanceof Date, 'Confirmation timestamp should be recorded.');
+
+    const secondSequence = await pool.query<{ value: string }>(
+      "SELECT nextval('bazariya.order_number_seq')::text AS value",
+    );
+    const draftOrderNumber = `BAZ-${secondSequence.rows[0]?.value.padStart(9, '0')}`;
+    const draft = await pool.query<{ id: string }>(
+      'INSERT INTO bazariya.orders (order_number) VALUES ($1) RETURNING id',
+      [draftOrderNumber],
+    );
+    const draftOrderId = draft.rows[0]?.id;
+    assert.ok(draftOrderId, 'Draft order insert did not return an id.');
+
+    await expectConstraint(
+      pool,
+      'UPDATE bazariya.order_items SET order_id = $2 WHERE order_id = $1',
+      [order.id, draftOrderId],
+      '23514',
+      'order_items_draft_only',
+      18,
+    );
+    await expectConstraint(
+      pool,
+      "UPDATE bazariya.orders SET note = 'Changed after confirmation' WHERE id = $1",
+      [order.id],
+      '23514',
+      'orders_confirmed_immutable',
+      19,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.order_items WHERE order_id = $1',
+      [order.id],
+      '23514',
+      'order_items_draft_only',
+      20,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.products WHERE id = $1',
+      [productId],
+      '23503',
+      'order_items_product_id_fkey',
+      21,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.orders WHERE id = $1',
+      [order.id],
+      '23514',
+      'orders_delete_draft_only',
+      22,
+    );
+
+    await pool.query("UPDATE bazariya.orders SET status = 'cancelled' WHERE id = $1", [order.id]);
+    const cancelled = await pool.query<{ status: string; cancelled_at: Date | null }>(
+      'SELECT status, cancelled_at FROM bazariya.orders WHERE id = $1',
+      [order.id],
+    );
+    assert.equal(cancelled.rows[0]?.status, 'cancelled');
+    assert.ok(cancelled.rows[0]?.cancelled_at instanceof Date, 'Cancellation timestamp should be recorded.');
+    await expectConstraint(
+      pool,
+      "UPDATE bazariya.orders SET note = 'Changed after cancellation' WHERE id = $1",
+      [order.id],
+      '23514',
+      'orders_cancelled_immutable',
+      23,
+    );
+    await expectConstraint(
+      pool,
+      'DELETE FROM bazariya.order_items WHERE order_id = $1',
+      [order.id],
+      '23514',
+      'order_items_draft_only',
+      24,
+    );
+
+    await pool.query('DELETE FROM bazariya.customers WHERE id = $1', [customerId]);
+    const customerReference = await pool.query<{ customer_id: string | null }>(
+      'SELECT customer_id FROM bazariya.orders WHERE id = $1',
+      [order.id],
+    );
+    assert.equal(customerReference.rows[0]?.customer_id, null, 'Deleting a customer should preserve its order with a null reference.');
+
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.order_items (
+         order_id, product_id, product_name, sku, unit, quantity, unit_price, line_total
+       ) VALUES ($1, $2, 'Invalid quantity', $3, 'pack', 0, 150000, 0)`,
+      [draftOrderId, productId, sku],
+      '23514',
+      'order_items_quantity_valid',
+      25,
+    );
+
+    await pool.query(
+      `INSERT INTO bazariya.order_items (
+         order_id, product_id, product_name, sku, unit, quantity, unit_price, line_total
+       ) VALUES ($1, $2, 'Updated tea', $3, 'pack', 1, 150000, 150000)`,
+      [draftOrderId, productId, sku],
+    );
+    await pool.query('UPDATE bazariya.orders SET subtotal = 150000, total = 150000 WHERE id = $1', [draftOrderId]);
+    await expectConstraint(
+      pool,
+      `INSERT INTO bazariya.order_items (
+         order_id, product_id, product_name, sku, unit, quantity, unit_price, line_total
+       ) VALUES ($1, $2, 'Duplicate row', $3, 'pack', 1, 150000, 150000)`,
+      [draftOrderId, productId, sku],
+      '23505',
+      'order_items_product_unique',
+      26,
+    );
+
+    await pool.query('DELETE FROM bazariya.orders WHERE id = $1', [draftOrderId]);
+    const cascadedItems = await pool.query<{ total: string }>(
+      'SELECT count(*)::text AS total FROM bazariya.order_items WHERE order_id = $1',
+      [draftOrderId],
+    );
+    assert.equal(cascadedItems.rows[0]?.total, '0', 'Deleting a draft order should cascade only its order items.');
+  } finally {
+    await pool.query('ROLLBACK');
+  }
+}
+
+async function verifyDeferredOrderTotals(pool: Pool): Promise<void> {
+  const sequence = await pool.query<{ value: string }>(
+    "SELECT nextval('bazariya.order_number_seq')::text AS value",
+  );
+  const orderNumber = `BAZ-${sequence.rows[0]?.value.padStart(9, '0')}`;
+  await pool.query('BEGIN');
+  let caught: unknown;
+  try {
+    await pool.query(
+      'INSERT INTO bazariya.orders (order_number, subtotal, total) VALUES ($1, 1, 1)',
+      [orderNumber],
+    );
+    await pool.query('COMMIT');
+  } catch (error) {
+    caught = error;
+    await pool.query('ROLLBACK').catch(() => undefined);
+  }
+  assert.ok(isConstraintError(caught), 'Deferred order/item total validation should reject a mismatched subtotal at commit.');
+  assert.equal(caught.code, '23514');
+  assert.equal(caught.constraint, 'orders_item_subtotal_consistent');
+}
+
 async function main(): Promise<void> {
   loadDotenv({ path: getEnvironmentFilePaths() });
   const environment = parseEnvironment(process.env);
@@ -228,21 +500,32 @@ async function main(): Promise<void> {
     const tables = await pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'bazariya' AND table_name = ANY($1::text[])`,
-      [['categories', 'products', 'customers']],
+      [['categories', 'products', 'customers', 'orders', 'order_items']],
     );
     const domainTables = new Set(tables.rows.map((row) => row.table_name));
 
     if (missing.length > 0) {
       throw new Error(`Migration tracking is missing: ${missing.join(', ')}`);
     }
-    if (domainTables.size !== 3 || !domainTables.has('categories') || !domainTables.has('products') || !domainTables.has('customers')) {
-      throw new Error('The versioned migrations did not create the expected catalog and customer domain tables.');
+    if (
+      domainTables.size !== 5
+      || !domainTables.has('categories')
+      || !domainTables.has('products')
+      || !domainTables.has('customers')
+      || !domainTables.has('orders')
+      || !domainTables.has('order_items')
+    ) {
+      throw new Error('The versioned migrations did not create the expected catalog, customer, and order domain tables.');
     }
 
     await verifyCatalogConstraints(pool);
     console.info('Catalog constraints: PASS (trimmed/case-insensitive names, canonical trimmed SKU, unique SKU, non-negative price, valid unit, and RESTRICT delete)');
     await verifyCustomerConstraints(pool);
     console.info('Customer constraints: PASS (trimmed bounded name, optional normalized-format phone, reusable phone numbers, active/timestamp defaults, and nullable contact fields)');
+    await verifyOrderConstraints(pool);
+    console.info('Order constraints: PASS (unique server-style number, draft defaults, snapshot history, safe lifecycle, active item restrictions, optional customer SET NULL, and draft-only cascade)');
+    await verifyDeferredOrderTotals(pool);
+    console.info('Order totals: PASS (deferred item subtotal invariant is enforced at commit)');
 
     const appliedCount = firstRun.applied.length;
     console.info(

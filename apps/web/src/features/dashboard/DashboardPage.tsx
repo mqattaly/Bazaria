@@ -36,7 +36,7 @@ export function DashboardPage() {
             <h2 className="text-base font-bold text-foreground" id="quick-actions-title">دسترسی سریع</h2>
             <p className="mt-1 text-xs text-muted">میانبرها برای دسترسی آسان‌تر آماده شده‌اند.</p>
           </div>
-          <span className="text-[0.68rem] text-muted">میانبر ثبت محصول و مشتری فعال است؛ سایر عملیات در فازهای بعدی می‌آیند.</span>
+          <span className="text-[0.68rem] text-muted">میانبر ثبت سفارش، محصول و مشتری فعال است؛ شاخص‌های داشبورد همچنان نمایشی‌اند.</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {dashboardQuickActions.map((action) => (
@@ -44,6 +44,10 @@ export function DashboardPage() {
               <Button
                 className="min-h-[4.5rem] w-full justify-start gap-3 rounded-xl px-3 text-start"
                 onClick={() => {
+                  if (action.id === 'new-order') {
+                    navigate('/orders/new');
+                    return;
+                  }
                   if (action.id === 'new-product') {
                     navigate('/products?create=1');
                     return;

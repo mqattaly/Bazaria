@@ -372,7 +372,7 @@ describe('Product and category UI', () => {
     expect(screen.getByText('۸۰٬۰۰۰ تومان')).toBeInTheDocument();
     expect(screen.queryByText('موجودی')).not.toBeInTheDocument();
     expect(screen.queryByText('سود')).not.toBeInTheDocument();
-    expect(screen.queryByText('سفارش‌ها')).not.toBeInTheDocument();
+    expect(screen.queryByText('شماره سفارش')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'ویرایش محصول' }));
     expect(await screen.findByRole('dialog', { name: 'ویرایش محصول' })).toBeInTheDocument();

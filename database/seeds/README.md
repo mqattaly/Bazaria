@@ -5,7 +5,7 @@ The SQL files contain small, deterministic development fixtures only:
 - `0001_phase2_catalog.sql`: four Category and six Product examples.
 - `0002_phase3_customers.sql`: three independent Customer examples.
 
-Both seeds are idempotent and are not production data. Customer rows have no relationship to Products, Categories, sales, or other future domains.
+Both seeds are idempotent and are not production data. Customer rows remain independent of Products and Categories. No Order fixture is seeded; development orders should be created through the order API/UI so active Product/Customer validation and snapshots are exercised.
 
 Run only with `NODE_ENV=development` after applying migrations:
 
