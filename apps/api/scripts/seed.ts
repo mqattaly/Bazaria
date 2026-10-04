@@ -16,6 +16,7 @@ async function main(): Promise<void> {
     '../../../database/seeds/0001_phase2_catalog.sql',
     '../../../database/seeds/0002_phase3_customers.sql',
     '../../../database/seeds/0003_phase5_inventory.sql',
+    '../../../database/seeds/0004_phase6_suppliers_purchases.sql',
   ].map((path) => fileURLToPath(new URL(path, import.meta.url)));
   const seedSql = await Promise.all(seedFiles.map((path) => readFile(path, 'utf8')));
   const pool = new Pool({ connectionString: environment.DATABASE_URL, max: 1 });
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
     await client.query('BEGIN');
     for (const sql of seedSql) await client.query(sql);
     await client.query('COMMIT');
-    console.info('Development seed: PASS (4 categories, 6 products, 3 customers, and 6 inventory records with sample movements; existing fixture IDs and SKUs are kept).');
+    console.info('Development seed: PASS (4 categories, 6 products, 3 customers, 6 inventory records with sample movements, 2 suppliers, and 1 draft purchase; existing fixture IDs and SKUs are kept).');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw error;

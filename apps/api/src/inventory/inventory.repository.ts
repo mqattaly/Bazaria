@@ -217,57 +217,90 @@ export class InventoryRepository {
   }
 
   async createMovement(productId: string, input: CreateStockMovementInput): Promise<CreateStockMovementResult> {
-    return this.database.transaction(async (client) => {
-      const product = await this.lockProduct(client, productId);
+    return this.database.transaction((client) => this.createMovementInTransaction(client, productId, input));
+  }
+
+  async createMovementInTransaction(
+    client: PoolClient,
+    productId: string,
+    input: CreateStockMovementInput,
+  ): Promise<CreateStockMovementResult> {
+    const product = await this.lockProduct(client, productId);
+    if (!product.isActive) {
+      throw new InventoryDomainError(
+        'PRODUCT_NOT_AVAILABLE',
+        'ثبت گردش موجودی برای محصول غیرفعال امکان‌پذیر نیست.',
+        409,
+      );
+    }
+
+    await this.ensureInventoryRow(client, productId);
+    const current = await this.lockInventory(client, productId);
+    if (!current) throw this.inventoryNotFound();
+    const beforeQuantity = toSafeQuantity(current.quantity);
+    const calculated = calculateStockMovement(beforeQuantity, input);
+
+    await client.query(
+      `UPDATE bazariya.inventory
+       SET quantity = $2, updated_at = now()
+       WHERE product_id = $1`,
+      [productId, calculated.afterQuantity],
+    );
+    const movementResult = await client.query<MovementRow>(
+      `INSERT INTO bazariya.stock_movements (
+         product_id, type, quantity, before_quantity, after_quantity, note
+       ) VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING
+         id,
+         product_id AS "productId",
+         type,
+         quantity::text AS quantity,
+         before_quantity::text AS "beforeQuantity",
+         after_quantity::text AS "afterQuantity",
+         note,
+         created_at AS "createdAt"`,
+      [
+        productId,
+        calculated.type,
+        calculated.quantity,
+        calculated.beforeQuantity,
+        calculated.afterQuantity,
+        input.note ?? null,
+      ],
+    );
+    const movementRow = movementResult.rows[0];
+    if (!movementRow) throw new Error('Stock movement insert did not return a row.');
+    const inventory = await this.findWithClient(client, productId);
+    if (!inventory) throw this.inventoryNotFound();
+
+    return { inventory, movement: mapMovement(movementRow) };
+  }
+
+  async assertProductsAvailableInTransaction(client: PoolClient, productIds: readonly string[]): Promise<void> {
+    const uniqueIds = [...new Set(productIds)].sort();
+    if (uniqueIds.length === 0) return;
+    const result = await client.query<ProductLockRow>(
+      `SELECT id, is_active AS "isActive"
+       FROM bazariya.products
+       WHERE id = ANY($1::uuid[])
+       ORDER BY id
+       FOR SHARE`,
+      [uniqueIds],
+    );
+    const products = new Map(result.rows.map((product) => [product.id, product]));
+    for (const productId of uniqueIds) {
+      const product = products.get(productId);
+      if (!product) {
+        throw new InventoryDomainError('PRODUCT_NOT_FOUND', 'یکی از محصولات خرید پیدا نشد.', 404);
+      }
       if (!product.isActive) {
         throw new InventoryDomainError(
           'PRODUCT_NOT_AVAILABLE',
-          'ثبت گردش موجودی برای محصول غیرفعال امکان‌پذیر نیست.',
+          'ثبت ورود از خرید برای محصول غیرفعال امکان‌پذیر نیست.',
           409,
         );
       }
-
-      await this.ensureInventoryRow(client, productId);
-      const current = await this.lockInventory(client, productId);
-      if (!current) throw this.inventoryNotFound();
-      const beforeQuantity = toSafeQuantity(current.quantity);
-      const calculated = calculateStockMovement(beforeQuantity, input);
-
-      await client.query(
-        `UPDATE bazariya.inventory
-         SET quantity = $2, updated_at = now()
-         WHERE product_id = $1`,
-        [productId, calculated.afterQuantity],
-      );
-      const movementResult = await client.query<MovementRow>(
-        `INSERT INTO bazariya.stock_movements (
-           product_id, type, quantity, before_quantity, after_quantity, note
-         ) VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING
-           id,
-           product_id AS "productId",
-           type,
-           quantity::text AS quantity,
-           before_quantity::text AS "beforeQuantity",
-           after_quantity::text AS "afterQuantity",
-           note,
-           created_at AS "createdAt"`,
-        [
-          productId,
-          calculated.type,
-          calculated.quantity,
-          calculated.beforeQuantity,
-          calculated.afterQuantity,
-          input.note ?? null,
-        ],
-      );
-      const movementRow = movementResult.rows[0];
-      if (!movementRow) throw new Error('Stock movement insert did not return a row.');
-      const inventory = await this.findWithClient(client, productId);
-      if (!inventory) throw this.inventoryNotFound();
-
-      return { inventory, movement: mapMovement(movementRow) };
-    });
+    }
   }
 
   async listMovements(

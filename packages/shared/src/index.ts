@@ -229,6 +229,126 @@ export interface OrderListQuery {
   pageSize: number;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  note: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  isActive: boolean;
+}
+
+export interface CreateSupplierInput {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  note?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateSupplierInput {
+  name?: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  note?: string | null;
+}
+
+export interface UpdateSupplierStatusInput {
+  isActive: boolean;
+}
+
+export interface SupplierListQuery {
+  search?: string;
+  status?: 'active' | 'inactive';
+  page: number;
+  pageSize: number;
+}
+
+export const PURCHASE_STATUSES = ['draft', 'confirmed', 'cancelled'] as const;
+export type PurchaseStatus = (typeof PURCHASE_STATUSES)[number];
+
+export interface PurchaseItemInput {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface PurchaseItem {
+  id: string;
+  purchaseId: string;
+  productId: string;
+  productNameSnapshot: string;
+  productSkuSnapshot: string;
+  unitSnapshot: ProductUnit;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface Purchase {
+  id: string;
+  purchaseNumber: string;
+  supplierId: string;
+  status: PurchaseStatus;
+  subtotal: number;
+  discount: number;
+  total: number;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseListItem extends Purchase {
+  supplierName: string;
+  itemCount: number;
+}
+
+export interface PurchaseDetails extends Purchase {
+  supplier: SupplierSummary;
+  items: PurchaseItem[];
+}
+
+export interface CreatePurchaseInput {
+  supplierId: string;
+  items: PurchaseItemInput[];
+  discount?: number;
+  note?: string | null;
+}
+
+export interface UpdatePurchaseInput {
+  supplierId?: string;
+  items?: PurchaseItemInput[];
+  discount?: number;
+  note?: string | null;
+}
+
+export interface UpdatePurchaseStatusInput {
+  status: 'confirmed' | 'cancelled';
+}
+
+export interface PurchaseListQuery {
+  search?: string;
+  supplierId?: string;
+  status?: PurchaseStatus;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}
+
 export const STOCK_MOVEMENT_TYPES = ['IN', 'OUT', 'ADJUSTMENT'] as const;
 export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
 

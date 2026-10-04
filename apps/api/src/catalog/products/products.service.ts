@@ -84,6 +84,14 @@ export class ProductsService {
           },
         });
       }
+      if (isPostgresError(error) && error.code === '23503' && error.constraint === 'purchase_items_product_id_fkey') {
+        throw new ConflictException({
+          error: {
+            code: 'PRODUCT_HAS_PURCHASE_HISTORY',
+            message: 'این محصول سابقهٔ خرید دارد و برای حفظ تاریخچه قابل حذف نیست.',
+          },
+        });
+      }
       throw error;
     }
   }

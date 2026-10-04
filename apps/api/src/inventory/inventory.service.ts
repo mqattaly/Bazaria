@@ -10,6 +10,7 @@ import {
   type StockMovementListQuery,
   type UpdateInventoryMinimumInput,
 } from '@bazariya/shared';
+import type { PoolClient } from 'pg';
 import { ApiException } from '../common/errors/api.exception.js';
 import { InventoryDomainError } from './inventory.errors.js';
 import { InventoryRepository } from './inventory.repository.js';
@@ -38,6 +39,19 @@ export class InventoryService {
   async createMovement(productId: string, input: CreateStockMovementInput): Promise<CreateStockMovementResult> {
     const normalized = this.validateMovement(input);
     return this.run(() => this.inventory.createMovement(productId, normalized));
+  }
+
+  async createMovementInTransaction(
+    client: PoolClient,
+    productId: string,
+    input: CreateStockMovementInput,
+  ): Promise<CreateStockMovementResult> {
+    const normalized = this.validateMovement(input);
+    return this.run(() => this.inventory.createMovementInTransaction(client, productId, normalized));
+  }
+
+  async assertProductsAvailableInTransaction(client: PoolClient, productIds: readonly string[]): Promise<void> {
+    return this.run(() => this.inventory.assertProductsAvailableInTransaction(client, productIds));
   }
 
   async listMovements(

@@ -44,19 +44,19 @@ npm run db:migrate
 NODE_ENV=development npm run db:seed
 ```
 
-`npm run db:migrate` از `DATABASE_URL` می‌خواند و migrationهای مرتب‌شدهٔ انجام‌نشده را اجرا می‌کند؛ `0001_foundation_schema.sql` schema پایه را می‌سازد، `0002_product_categories.sql` جدول‌ها و constraintهای محصول/دسته‌بندی را اضافه می‌کند، `0003_customers.sql` جدول مستقل مشتری را می‌سازد، `0004_orders.sql` جدول‌های سفارش و اقلام را با snapshotها و constraintهای چرخهٔ عمر می‌سازد و `0005_inventory.sql` جدول موجودی و گردش‌ها را اضافه می‌کند. migrationها با advisory lock و transaction ثبت می‌شوند.
+`npm run db:migrate` از `DATABASE_URL` می‌خواند و migrationهای مرتب‌شدهٔ انجام‌نشده را اجرا می‌کند؛ `0001_foundation_schema.sql` schema پایه، `0002_product_categories.sql` کاتالوگ، `0003_customers.sql` Customer، `0004_orders.sql` Order/OrderItem، `0005_inventory.sql` موجودی/گردش و `0006_suppliers_purchases.sql` Supplier/Purchase/PurchaseItem را می‌سازند. migrationها با advisory lock و transaction ثبت می‌شوند.
 
-seed اختیاری فقط وقتی `NODE_ENV=development` است اجرا می‌شود. `database/seeds/0001_phase2_catalog.sql` چهار دسته و شش محصول، `database/seeds/0002_phase3_customers.sql` سه مشتری و `database/seeds/0003_phase5_inventory.sql` موجودی و گردش نمونهٔ محصولات را idempotent می‌سازند؛ seed سفارش اضافه نشده است. runner این SQLها را فقط در مسیر توسعه و در یک transaction اجرا می‌کند. جزئیات در [`database/seeds/README.md`](../database/seeds/README.md) است.
+seed اختیاری فقط وقتی `NODE_ENV=development` است اجرا می‌شود. seedهای کاتالوگ، مشتری، Inventory/گردش، دو Supplier و یک draft Purchase نمونه idempotent هستند؛ پیش‌نویس نمونه موجودی را تغییر نمی‌دهد. runner این SQLها را فقط در مسیر توسعه و در یک transaction اجرا می‌کند. جزئیات در [`database/seeds/README.md`](../database/seeds/README.md) است.
 
-تست دیتابیس migrationها و constraintهای PostgreSQL (از جمله constraintهای کاتالوگ/Customer/Order و موجودی نامنفی یکتا، نوع/مقدار و snapshotهای سازگار، immutability گردش و FKهای نگهدارندهٔ تاریخچه) را روی دیتابیس مقصد بررسی می‌کند. تست روی transactionهای rollbackشونده انجام می‌شود؛ حتماً یک دیتابیس اختصاصی برای تست انتخاب کنید:
+تست دیتابیس migrationها و constraintهای PostgreSQL کاتالوگ، Customer، Order، Inventory، Supplier و Purchase را روی دیتابیس مقصد بررسی می‌کند؛ از جمله مبالغ safe و جمع اقلام، snapshotها، چرخهٔ draft-only، immutability تاریخچه، تماس‌های اختیاری و FKهای نگهدارندهٔ Supplier/Product. تست روی transactionهای rollbackشونده انجام می‌شود؛ حتماً یک دیتابیس اختصاصی برای تست انتخاب کنید:
 
 ```bash
 DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/bazariya_test npm run test:database
 ```
 
-## API کاتالوگ، مشتریان، سفارش‌ها و موجودی
+## API کاتالوگ، مشتریان، سفارش‌ها، موجودی و خرید
 
-پیشوند همهٔ مسیرها `/api/v1` است. مدل/DTOهای مشترک و محدودیت‌ها در `packages/shared` هستند؛ ماژول‌های Nest کاتالوگ در `apps/api/src/catalog`، Customer در `apps/api/src/customers`، Order در `apps/api/src/orders` و Inventory در `apps/api/src/inventory` قرار دارند.
+پیشوند همهٔ مسیرها `/api/v1` است. مدل/DTOهای مشترک و محدودیت‌ها در `packages/shared` هستند؛ ماژول‌های Nest کاتالوگ در `apps/api/src/catalog`، Customer در `apps/api/src/customers`، Order در `apps/api/src/orders`، Inventory در `apps/api/src/inventory`، Supplier در `apps/api/src/suppliers` و Purchase در `apps/api/src/purchases` قرار دارند.
 
 | روش | مسیر | شرح |
 | --- | --- | --- |
@@ -85,6 +85,17 @@ DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/bazariya_test npm run tes
 | `PATCH` | `/inventory/:productId/minimum` | تغییر حداقل موجودی بدون ایجاد گردش |
 | `POST` | `/inventory/:productId/movements` | ثبت اتمیک IN، OUT یا ADJUSTMENT |
 | `GET` | `/inventory/:productId/movements` | تاریخچهٔ صفحه‌بندی‌شده با فیلتر نوع/زمان |
+| `GET` | `/suppliers` | فهرست با جستجوی نام/تلفن/ایمیل، وضعیت و صفحه‌بندی |
+| `POST` | `/suppliers` | ثبت تأمین‌کننده؛ فقط نام الزامی است |
+| `GET` | `/suppliers/:id` | جزئیات تأمین‌کننده |
+| `PATCH` | `/suppliers/:id` | ویرایش اطلاعات تماس و یادداشت |
+| `PATCH` | `/suppliers/:id/status` | فعال/غیرفعال کردن تأمین‌کننده |
+| `DELETE` | `/suppliers/:id` | حذف فقط بدون سابقهٔ خرید؛ در غیر این‌صورت `409 SUPPLIER_HAS_PURCHASE_HISTORY` |
+| `GET` | `/purchases` | فهرست با جستجو، Supplier، وضعیت، تاریخ و صفحه‌بندی |
+| `POST` | `/purchases` | ساخت draft با قیمت‌ها و snapshotهای Product سرورساخت |
+| `GET` | `/purchases/:id` | جزئیات خرید و اقلام snapshotشده |
+| `PATCH` | `/purchases/:id` | ویرایش فقط draft |
+| `PATCH` | `/purchases/:id/status` | draft را تأیید یا لغو می‌کند؛ confirmed/cancelled تغییرناپذیرند |
 
 برای فهرست محصولات، `search` trim و روی ابتدای نام/SKU جستجو می‌شود، `categoryId` و `isActive` فیلتر اختیاری‌اند؛ `page`/`pageSize` پیش‌فرض ۱/۲۰، سقف page برابر 2,147,483,647 و سقف pageSize برابر ۱۰۰ است. SKU پس از trim به uppercase نرمال می‌شود و قیمت‌های API عدد صحیح غیرمنفی Toman هستند.
 
@@ -95,6 +106,12 @@ DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/bazariya_test npm run tes
 برای Inventory، `GET /inventory` از `search`, `status`, `lowStock`, `page`, `pageSize` پشتیبانی می‌کند. `out-of-stock` از `low-stock` جداست؛ فیلتر `status=low-stock` موجودی مثبت تا حداقل را می‌گیرد و `lowStock=true` صفر را نیز شامل می‌شود. صفر با حداقل صفر همچنان `isLowStock=true` است.
 
 در بدنهٔ `POST /inventory/:productId/movements`، `IN` و `OUT` مقدار صحیح مثبت می‌خواهند؛ `OUT` بیش از موجودی با `409 INSUFFICIENT_STOCK` رد می‌شود. در `ADJUSTMENT` مقدار `quantity` موجودی نهایی (صفر هم مجاز است) است؛ سرور before/after و delta تاریخچه را می‌سازد. Inventory با Product فقط reference دارد و به Order وصل نیست؛ تغییر وضعیت سفارش، موجودی را کم نمی‌کند. movement update/delete endpoint ندارد و trigger دیتابیس تاریخچه را immutable نگه می‌دارد. محصول غیرفعال قابل مشاهده اما از حرکت جدید منع می‌شود.
+
+برای Supplier، `name` الزامی و راه‌های تماس/آدرس/یادداشت اختیاری‌اند. جستجوی لیست نام، تلفن و ایمیل را پوشش می‌دهد؛ `status=active|inactive` و صفحه‌بندی نیز قابل استفاده‌اند. Supplier دارای Purchase history حذف نمی‌شود و باید به‌جای آن غیرفعال شود.
+
+Purchase یک draft با شمارهٔ یکتای server-generated `PUR-...` می‌سازد. اقلام `productId`, `quantity`, `unitPrice` می‌گیرند؛ quantity صحیح مثبت، قیمت و تخفیف عدد صحیح safe و نامنفی Toman هستند. نام/SKU/واحد Product هنگام افزودن محصول برای نخستین‌بار در سرور snapshot می‌شوند؛ ویرایش draft برای اقلام موجود snapshot را حفظ و برای محصول تازه snapshot فعلی می‌گیرد. همهٔ مبالغ در سرور محاسبه می‌شوند و جمع خط، subtotal، تخفیف و total در PostgreSQL نیز با constraint/trigger محافظت می‌شوند. قیمت‌ها در draft قابل تغییرند؛ duplicate product با قیمت یکسان ادغام می‌شود و قیمت‌های متعارض با `DUPLICATE_PRODUCT_PRICE_MISMATCH` رد می‌شوند.
+
+چرخه فقط `draft → confirmed` یا `draft → cancelled` است. Draft قابل ویرایش است؛ confirmed و cancelled immutable می‌مانند و API حذف Purchase ندارد. لغو draft موجودی را تغییر نمی‌دهد. تأیید، با قفل ردیف Purchase و یک transaction، Supplier/Productهای فعال را بررسی می‌کند، از Inventory Phase 5 برای هر قلم یک `IN` با یادداشت `Purchase PUR-...` می‌سازد و وضعیت را confirmed می‌کند. شکست هر بخش، stock movements و مقادیر موجودی را rollback می‌کند؛ درخواست تکراری/هم‌زمان موجودی را دوباره افزایش نمی‌دهد. Order همچنان مستقل است. فیلترهای `from` و `to` در Purchase هم ISO-8601 با timezone صریح می‌خواهند؛ UI ورودی محلی را طبق قرارداد پروژه به UTC تبدیل می‌کند.
 
 ## تست، lint و build
 
@@ -107,12 +124,12 @@ npm run build
 npm run test:phase0
 ```
 
-`npm test` شامل تست‌های HTTP API و محاسبات سفارش/موجودی (بدون PostgreSQL)، تست transaction repository موجودی با client کنترل‌شده، تست CRUD کاتالوگ/مشتری، صفحه‌های سفارش و موجودی، جستجو/فیلتر/صفحه‌بندی/جهش‌های موفق و خطا، و تست اجزای UI است. `npm run test:database` تست واقعی یکپارچگی با PostgreSQL است و به `DATABASE_URL` نیاز دارد. `npm run test:phase0` دستور سازگاری قبلی برای lint/typecheck/tests/database/build است.
+`npm test` شامل تست‌های HTTP API و محاسبات سفارش/خرید/موجودی (بدون PostgreSQL)، قفل/transactionهای خرید و موجودی با providerهای کنترل‌شده، تست CRUD کاتالوگ/مشتری/تأمین‌کننده، صفحه‌های سفارش/موجودی/خرید، جستجو/فیلتر/صفحه‌بندی/چرخهٔ وضعیت و تست اجزای UI است. `npm run test:database` تست واقعی یکپارچگی با PostgreSQL است و به `DATABASE_URL` نیاز دارد. `npm run test:phase0` دستور سازگاری قبلی برای lint/typecheck/tests/database/build است.
 
 ## نکات توسعه
 
 - هر دامنه در ماژول خود بماند؛ controller محل انباشتن منطق کسب‌وکار نیست و CRUD generic اضافه نکنید.
 - هر تغییر schema باید migration مستقل، نسخه‌بندی‌شده و قابل‌تکرار داشته باشد.
 - ورودی کلاینت معتبر فرض نمی‌شود؛ DTO باید فیلدهای ناشناخته را رد کند و queryهای متغیردار با placeholderهای `pg` پارامتری باشند.
-- Customer از Product و Category مستقل است؛ رابطهٔ اختیاری Order با Customer در خود دامنهٔ Order نگهداری می‌شود. Inventory مالک مقدار، حداقل و StockMovement است و Product فقط مرجع آن است؛ Order هیچ تغییری در موجودی ایجاد نمی‌کند. منطق خرید، چندانباره‌بودن، تأمین‌کننده، پرداخت، حسابداری، تحویل، رزرو/ارزش‌گذاری، وفاداری و گزارش‌های پیشرفته خارج از محدوده می‌مانند.
+- Customer، Supplier و Inventory ماژول‌های مستقل‌اند. Inventory مالک مقدار، حداقل و StockMovement است؛ Purchase از مسیر Inventory موجودی را فقط هنگام تأیید draft افزایش می‌دهد و Order هیچ تغییری در موجودی ایجاد نمی‌کند. پرداخت/تسویه، حسابداری/بهای تمام‌شده، برگشت خرید، دریافت جزئی، backorder، چندانباره‌بودن، workflow/approval عمومی، پرتال تأمین‌کننده، اعلان و گزارش‌های پیشرفته خارج از محدوده‌اند.
 - مؤلفه‌های UI باید از توکن‌های معنایی، label/error مرتبط، focus قابل‌مشاهده و ویژگی‌های دسترس‌پذیری استفاده کنند. دادهٔ داشبورد را با اطلاعات واقعی کاتالوگ اشتباه نگیرید.

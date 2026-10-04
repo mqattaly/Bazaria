@@ -2,20 +2,20 @@
 
 ## محدودهٔ فعلی
 
-مخزن زیرساخت Phase 0، بنیاد رابط کاربری Phase 1، دامنهٔ محدود کاتالوگ Phase 2، مدیریت مستقل مشتریان Phase 3، مدیریت سفارش‌ها در Phase 4 و Inventory/گردش موجودی در Phase 5 را پیاده‌سازی می‌کند. **Product** و **Category تخت**، **Customer**، **Order/OrderItem** و **Inventory/StockMovement** دامنه‌های مستقل‌اند؛ داشبورد عمدتاً mock است و ورود واقعی یا احراز هویت وجود ندارد.
+مخزن زیرساخت Phase 0، بنیاد رابط کاربری Phase 1، کاتالوگ Phase 2، Customer در Phase 3، Order در Phase 4، Inventory در Phase 5 و Suppliers & Purchasing در Phase 6 را پیاده‌سازی می‌کند. **Product**، **Category تخت**، **Customer**، **Order/OrderItem**، **Inventory/StockMovement**، **Supplier** و **Purchase/PurchaseItem** دامنه‌های مستقل‌اند؛ داشبورد عمدتاً mock است و ورود واقعی یا احراز هویت وجود ندارد.
 
 ## Stack و مرزبندی
 
 ```text
 apps/
-  web/       React + TypeScript + Vite؛ پوستهٔ فارسی/RTL، کاتالوگ، مشتریان، سفارش‌ها و موجودی
+  web/       React + TypeScript + Vite؛ پوستهٔ فارسی/RTL، کاتالوگ، مشتریان، سفارش‌ها، موجودی و خرید
   api/       NestJS + TypeScript؛ REST API ماژولار
 packages/
   shared/    قراردادهای TypeScript و انواع مشترک
   config/    تنظیمات پایهٔ TypeScript
  database/
   migrations/ SQLهای نسخه‌بندی‌شده
-  seeds/       دادهٔ توسعهٔ اختیاری برای کاتالوگ، مشتریان و موجودی
+  seeds/       دادهٔ توسعهٔ اختیاری برای کاتالوگ، مشتریان، موجودی و خرید
  docker/
   compose.yml  PostgreSQL محلی برای توسعه
 ```
@@ -31,10 +31,11 @@ packages/
 - `/customers` فهرست واکنش‌گرا، جستجو/فیلتر، فرم ایجاد/ویرایش و تأیید حذف را دارد؛ `/customers/:id` فقط اطلاعات پایه و timestampهای همان مشتری را نشان می‌دهد. Customer از Product و Category مستقل است؛ تنها Order مالک رابطهٔ اختیاری خود با Customer است.
 - `/orders` فهرست جستجو/فیلتر/صفحه‌بندی‌شده و واکنش‌گرا، `/orders/new` فرم سفارش، و `/orders/:id` جزئیات و مدیریت وضعیت را نمایش می‌دهند. سفارش پیش‌نویس قابل ویرایش است؛ تأییدشده فقط قابل لغو و لغوشده immutable است. انتخاب مشتری اختیاری و انتخاب محصول قابل جستجو است؛ جزئیات/قیمت محصول هنگام ثبت در سرور snapshot می‌شوند. فیلترهای datetime UI به‌وقت Asia/Tehran تعبیر و به ISO UTC تبدیل می‌شوند؛ تاریخ‌های نمایشی با تقویم فارسی در همین منطقهٔ زمانی قالب‌بندی می‌شوند.
 - `/inventory` موجودی را با جستجوی نام/SKU، وضعیت جداگانهٔ کم‌موجودی/ناموجود و صفحه‌بندی نشان می‌دهد؛ `/inventory/:productId` حداقل موجودی، عملیات سریع ورود/خروج/اصلاح و سابقهٔ صفحه‌بندی‌شده با snapshot قبل/بعد را ارائه می‌کند. صفحه‌ها فارسی، RTL و واکنش‌گرا هستند؛ محصول غیرفعال قابل مشاهده است اما ثبت گردش جدید برایش غیرفعال می‌شود. آستانهٔ کم‌موجودی با حداقل برابر هم فعال است.
-- داشبورد در `features/dashboard/` قرار دارد؛ میانبر موجودی به `/inventory` می‌رود. KPIهای باقی‌مانده و فعالیت‌ها صرفاً mock/نمایشی‌اند و موجودی عملیاتی در داشبورد گزارش یا KPI ندارد.
+- `/suppliers` و `/suppliers/:id` مدیریت تماس و وضعیت تأمین‌کنندگان را با جستجو، فیلتر و صفحه‌بندی فراهم می‌کنند. `/purchases`, `/purchases/new` و `/purchases/:id` خریدها را در رابط فارسی/RTL ثبت و پیگیری می‌کنند؛ پیش‌نویس قابل ویرایش/لغو است و تأیید با هشدار افزایش موجودی انجام می‌شود. فیلتر تاریخ به‌وقت `Asia/Tehran` تبدیل می‌شود؛ snapshot محصول و مبالغ نهایی از API نمایش داده می‌شوند.
+- داشبورد در `features/dashboard/` قرار دارد؛ میانبر موجودی به `/inventory` می‌رود. KPIها و فعالیت‌ها صرفاً mock/نمایشی‌اند؛ KPI عملیاتی موجودی، خرید یا تأمین‌کننده اضافه نشده است.
 - `/login` placeholder است و هیچ احراز هویتی انجام نمی‌دهد.
 
-## دامنه‌های Product، Category، Customer، Order، Inventory و REST API
+## دامنه‌های Product، Category، Customer، Order، Inventory، Supplier، Purchase و REST API
 
 API در NestJS ماژولار است. Controllerها مرز HTTP هستند، سرویس‌ها قواعد دامنه را اعمال می‌کنند و repositoryها queryهای SQL پارامتری را با `DatabaseService` اجرا می‌کنند. قراردادهای ورودی/خروجی در `@bazariya/shared` و اعتبارسنجی HTTP با DTOهای typed انجام می‌شود. مسیر همهٔ endpointها زیر `/api/v1` است.
 
@@ -51,7 +52,7 @@ API در NestJS ماژولار است. Controllerها مرز HTTP هستند، �
 - SKU پس از trim به uppercase نرمال می‌شود و یکتایی به‌صورت canonical (حروف بزرگ) اعمال می‌شود؛ الگوریتم خودکار تولید SKU وجود ندارد.
 - قیمت‌ها در API و PostgreSQL عدد صحیح غیرمنفی Toman هستند؛ مقدار پولی float ذخیره نمی‌شود. قالب‌بندی فارسی (`Intl.NumberFormat`) فقط در presentation انجام می‌گیرد.
 - `GET /products` جستجوی trim‌شده و بدون حساسیت به حروف را روی ابتدای نام و SKU، و فیلترهای اختیاری `categoryId` و `isActive` می‌پذیرد. `page` و `pageSize` عدد صحیح مثبت‌اند؛ پیش‌فرض‌ها ۱ و ۲۰، سقف `page` برابر ۲٬۱۴۷٬۴۸۳٬۶۴۷ و سقف `pageSize` برابر ۱۰۰ است. پاسخ شامل `items` و `pagination: { page, pageSize, total, totalPages }` است.
-- updateها فقط فیلدهای مجاز DTO را می‌پذیرند؛ فیلد ناشناخته رد می‌شود. شناسهٔ دسته باید به دستهٔ موجود اشاره کند.
+- updateها فقط فیلدهای مجاز DTO را می‌پذیرند؛ فیلد ناشناخته رد می‌شود. شناسهٔ دسته باید به دستهٔ موجود اشاره کند. Product دارای سابقهٔ StockMovement یا PurchaseItem قابل حذف نیست؛ API خطای کنترل‌شدهٔ مربوط به تاریخچه را برمی‌گرداند.
 
 ### Customer
 
@@ -81,11 +82,21 @@ API در NestJS ماژولار است. Controllerها مرز HTTP هستند، �
 - درج StockMovement و به‌روزرسانی موجودی در یک transaction انجام می‌شوند: ردیف Product با `FOR SHARE` و ردیف Inventory با `FOR UPDATE` قفل می‌شوند؛ rollback در صورت خطا هر دو تغییر را برمی‌گرداند. Order تغییر موجودی انجام نمی‌دهد.
 - تاریخچه با فیلتر اختیاری `type`, `from`, `to` و صفحه‌بندی برمی‌گردد. زمان‌های فیلتر باید ISO-8601 با timezone صریح باشند. before/after، نوع، مقدار و یادداشت رویداد برای همیشه نگهداری می‌شوند و API/trigger دیتابیس اجازهٔ ویرایش یا حذف تاریخچه را نمی‌دهد.
 
+### Supplier، Purchase و PurchaseItem (Phase 6)
+
+- مسیرهای Supplier: `GET/POST /suppliers`, `GET/PATCH/DELETE /suppliers/:id`, و `PATCH /suppliers/:id/status`. `name` الزامی است؛ تلفن، ایمیل، آدرس و یادداشت اختیاری/nullable هستند. فهرست جستجوی نام/تلفن/ایمیل، فیلتر وضعیت فعال/غیرفعال و صفحه‌بندی را دارد. تأمین‌کننده دارای Purchase history hard-delete نمی‌شود و پاسخ `409 SUPPLIER_HAS_PURCHASE_HISTORY` می‌گیرد؛ غیرفعال‌سازی مسیر حفظ سابقه است.
+- مسیرهای Purchase: `GET/POST /purchases`, `GET/PATCH /purchases/:id`, `PATCH /purchases/:id/status`. فهرست از جستجوی شمارهٔ خرید/نام تأمین‌کننده، `supplierId`, `status`, `from`, `to`, `page` و `pageSize` پشتیبانی می‌کند. `from` و `to` باید ISO-8601 با timezone صریح باشند و در PostgreSQL به‌صورت `timestamptz` مقایسه می‌شوند.
+- شمارهٔ یکتای `PUR-...` با sequence سرور ساخته می‌شود. وضعیت‌ها فقط `draft`, `confirmed`, `cancelled` هستند: draft ویرایش‌پذیر است و می‌تواند confirmed یا cancelled شود؛ هر دو وضعیت نهایی immutable هستند. endpoint حذف Purchase وجود ندارد و trigger دیتابیس hard-delete را نیز رد می‌کند. لغو draft هیچ StockMovement ایجاد نمی‌کند؛ confirmed قابل لغو نیست.
+- تأمین‌کننده باید فعال و محصولات در زمان ایجاد/ویرایش قلم و تأیید فعال باشند. `PurchaseItem` نام، SKU و واحد Product را هنگام افزودن همان محصول برای نخستین‌بار snapshot می‌کند؛ ویرایش پیش‌نویس snapshot قلم موجود را حفظ می‌کند و فقط محصول تازه‌افزوده‌شده snapshot تازه می‌گیرد. قیمت واحد و تخفیف ورودی عدد صحیح safe و نامنفی تومان‌اند؛ قیمت/تعداد/مبالغ ردیف، subtotal، total و purchase number سمت سرور اعتبارسنجی/محاسبه می‌شوند. تخفیف از subtotal بیشتر نیست و کل مبالغ تا `Number.MAX_SAFE_INTEGER` محدودند.
+- ردیف تکراری Product با قیمت یکسان به یک قلم و تعداد تجمیع‌شده تبدیل می‌شود؛ قیمت‌های متفاوت برای یک Product در یک درخواست با `DUPLICATE_PRODUCT_PRICE_MISMATCH` رد می‌شوند. قید یکتای `(purchase_id, product_id)` نیز این قاعده را در PostgreSQL پشتیبانی می‌کند.
+- تأیید draft در همان transaction دیتابیس قفل ردیف Purchase را می‌گیرد، Supplier و Productهای فعال را اعتبارسنجی می‌کند، از مسیر اتمیک Phase 5 برای هر قلم یک `IN` می‌سازد و یادداشت را با شمارهٔ `PUR-...` مرجع می‌دهد، سپس Purchase را confirmed می‌کند. failure هر حرکت کل transaction را rollback می‌کند؛ درخواست تکراری/هم‌زمان پس از قفل وضعیت نهایی را می‌بیند و نمی‌تواند موجودی را دوباره افزایش دهد. ایجاد و ویرایش Purchase به سیستم Inventory دوم متصل نیست؛ Order همچنان مستقل است و موجودی را تغییر نمی‌دهد.
+- `purchase_items.product_id` و `purchases.supplier_id` با `ON DELETE RESTRICT` تاریخچه را نگه می‌دارند؛ حذف Product دارای Purchase history با `409 PRODUCT_HAS_PURCHASE_HISTORY` گزارش می‌شود. قیود و triggerهای دیتابیس draft-only بودن تغییر اقلام، immutability وضعیت نهایی، subtotal و مبالغ سازگار را محافظت می‌کنند.
+
 ### قرارداد پاسخ و خطا
 
-- پاسخ موفق: `{ "data": ... }` و برای فهرست‌های صفحه‌بندی‌شدهٔ محصولات، مشتریان، سفارش‌ها، Inventory و StockMovement، `items` و `pagination` درون `data` قرار دارند.
+- پاسخ موفق: `{ "data": ... }` و برای فهرست‌های صفحه‌بندی‌شدهٔ محصولات، مشتریان، سفارش‌ها، موجودی، Supplier، Purchase و StockMovement، `items` و `pagination` درون `data` قرار دارند.
 - پاسخ خطا: `{ "error": { "code": "...", "message": "...", "details": [...] } }`.
-- خطاهای تکراری نام/SKU، دستهٔ نامعتبر، دستهٔ وابسته به محصول، اعتبارسنجی مشتری و not-found به status/code مشخص و پیام امن نگاشت می‌شوند؛ SQL، stack trace و جزئیات اتصال به کلاینت نشت نمی‌کند.
+- خطاهای تکراری نام/SKU، دستهٔ وابسته، سابقهٔ حذف‌ناپذیر Product/Supplier، وضعیت نامعتبر خرید، اعتبارسنجی و not-found به status/code مشخص و پیام امن نگاشت می‌شوند؛ SQL، stack trace و جزئیات اتصال به کلاینت نشت نمی‌کند.
 - اعتبارسنجی HTTP با `ValidationPipe` و گزینه‌های `whitelist`, `forbidNonWhitelisted`, `transform` انجام می‌شود. CORS با `WEB_ORIGIN` محدود است و Helmet headerهای امنیتی را تنظیم می‌کند.
 
 ## PostgreSQL و migrationها
@@ -96,10 +107,11 @@ API در NestJS ماژولار است. Controllerها مرز HTTP هستند، �
 - `0002_product_categories.sql` جدول‌های `categories` و `products`، UUIDها، محدودیت یکتایی نام case-insensitive و SKU canonical، checkهای واحد و قیمت صحیح غیرمنفی، کلید خارجی RESTRICT و indexهای دسته/وضعیت/جستجوی prefix را می‌سازد.
 - `0003_customers.sql` جدول مستقل `customers` را با UUID، فیلدهای nullable، وضعیت پیش‌فرض فعال، timestampهای `timestamptz`، checkهای نام/شماره و indexهای وضعیت/شماره ایجاد می‌کند؛ شماره تماس unique نیست.
 - `0004_orders.sql` sequence شمارهٔ سفارش و جدول‌های `orders`/`order_items`، snapshotهای محصول، FKهای `SET NULL`/`RESTRICT`/draft-only cascade، checkهای وضعیت و مبالغ صحیح، triggerهای immutability و subtotal، و indexهای فهرست سفارش را ایجاد می‌کند.
-- `0005_inventory.sql` جدول مستقل `inventory` با PK/FK یکتای Product و حداقل/موجودی صحیح نامنفی، backfill صفر برای محصولات موجود، جدول snapshotمحور `stock_movements` با checkهای نوع/مقدار سازگار، indexهای محدود، trigger تاریخچهٔ immutable و FKهای نگهدارندهٔ تاریخچه را می‌سازد. حذف Product در صورت وجود movement با `RESTRICT` مسدود است؛ اگر تاریخچه‌ای وجود نداشته باشد، ردیف state موجودی با `CASCADE` حذف می‌شود.
+- `0005_inventory.sql` جدول مستقل `inventory` با PK/FK یکتای Product و حداقل/موجودی صحیح نامنفی، backfill صفر برای محصولات موجود، جدول snapshotمحور `stock_movements` با checkهای نوع/مقدار سازگار، indexهای محدود، trigger تاریخچهٔ immutable و FKهای نگهدارندهٔ تاریخچه را می‌سازد.
+- `0006_suppliers_purchases.sql` sequence شمارهٔ خرید، Supplier، Purchase و PurchaseItem را می‌سازد؛ مبالغ و snapshotها check می‌شوند، Purchase حذف‌ناپذیر/چرخهٔ عمر محدود دارد، اقلام فقط در draft تغییر می‌کنند و triggerهای deferred جمع اقلام را با subtotal تطبیق می‌دهند. FKهای Supplier/Product تاریخچه را با RESTRICT حفظ می‌کنند.
 - اجرای migration: `npm run db:migrate`.
-- seed توسعهٔ اختیاری و idempotent: `NODE_ENV=development npm run db:seed`. runner seedهای کوچک کاتالوگ، مشتری و شش رکورد نمونهٔ Inventory/گردش را در transaction بار می‌کند؛ هیچ seedای در محیط غیرتوسعه‌ای اجرا نمی‌شود.
-- تست واقعی محدودیت‌ها و migrationها: `npm run test:database` با PostgreSQL مجزا و `DATABASE_URL` معتبر؛ تست Inventory defaults/یکتایی، مرزهای stock، سازگاری snapshotها، immutability تاریخچه، FKهای Product و cascade state را نیز بررسی می‌کند.
+- seed توسعهٔ اختیاری و idempotent: `NODE_ENV=development npm run db:seed`. runner کاتالوگ، مشتری، Inventory/گردش نمونه، دو Supplier و یک پیش‌نویس Purchase را در transaction بار می‌کند؛ هیچ seedای در محیط غیرتوسعه‌ای اجرا نمی‌شود.
+- تست واقعی محدودیت‌ها و migrationها: `npm run test:database` با PostgreSQL مجزا و `DATABASE_URL` معتبر؛ تست Inventory defaults/یکتایی، مرزهای stock، immutability، Supplier/Purchase snapshots، status guards و سازگاری جمع اقلام را نیز بررسی می‌کند.
 
 نقش دیتابیس اجراکننده به مجوز ساخت schema و جدول tracking نیاز دارد؛ تست یکپارچه را روی دیتابیس اختصاصی/آزمایشی اجرا کنید.
 
@@ -112,4 +124,4 @@ API در NestJS ماژولار است. Controllerها مرز HTTP هستند، �
 
 ## موارد خارج از محدوده
 
-ورود/کاربر/نقش، tenant و RLS، چندانباره‌بودن و مدیریت انبار فیزیکی، خرید و تأمین‌کننده، پرداخت/مانده‌حساب، حسابداری، تحویل، رزرو، ارزش‌گذاری، وفاداری، تخفیف‌های پیچیده، GPS و گزارش‌های پیشرفته خارج از Phase 5 هستند و جدول/API دامنه‌ای برایشان اضافه نشده است. Inventory فقط مقدار فعلی، حداقل و گردش‌های دستی مستقل را مدیریت می‌کند؛ سفارش موجودی را تغییر نمی‌دهد. `purchasePrice` فقط فیلد پایهٔ اختیاری محصول است و هیچ منطق خرید یا سودی ندارد. اعداد/فعالیت‌های باقی‌ماندهٔ داشبورد دادهٔ عملیاتی نیستند و KPI موجودی ندارد.
+ورود/کاربر/نقش، tenant و RLS، چندانباره‌بودن و مدیریت انبار فیزیکی، پرداخت/تسویه، حسابداری/بهای تمام‌شده، FIFO/LIFO/میانگین موزون، برگشت خرید، دریافت جزئی، backorder، تأیید چندمرحله‌ای، پرتال تأمین‌کننده، اعلان، GPS و گزارش‌های پیشرفته خارج از Phase 6 هستند و برایشان دامنه یا چارچوب عمومی اضافه نشده است. Purchase فقط خرید ساده با قیمت ثبت‌شده، سه وضعیت محدود و ثبت ورود موجودی در تأیید را مدیریت می‌کند؛ Order همچنان موجودی را تغییر نمی‌دهد. اعداد/فعالیت‌های داشبورد دادهٔ عملیاتی نیستند و KPI موجودی/خرید/تأمین‌کننده ندارد.

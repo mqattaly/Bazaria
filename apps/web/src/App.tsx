@@ -11,6 +11,11 @@ import { NewOrderPage } from './features/orders/NewOrderPage';
 import { OrdersPage } from './features/orders/OrdersPage';
 import { InventoryPage } from './features/inventory/InventoryPage';
 import { InventoryDetailsPage } from './features/inventory/InventoryDetailsPage';
+import { PurchaseDetailsPage } from './features/purchasing/PurchaseDetailsPage';
+import { NewPurchasePage } from './features/purchasing/NewPurchasePage';
+import { PurchasesPage } from './features/purchasing/PurchasesPage';
+import { SupplierDetailsPage } from './features/purchasing/SupplierDetailsPage';
+import { SuppliersPage } from './features/purchasing/SuppliersPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -31,6 +36,11 @@ export function AppRoutes() {
         <Route element={<OrderDetailsPage />} path="orders/:id" />
         <Route element={<InventoryPage />} path="inventory" />
         <Route element={<InventoryDetailsPage />} path="inventory/:productId" />
+        <Route element={<SuppliersPage />} path="suppliers" />
+        <Route element={<SupplierDetailsPage />} path="suppliers/:id" />
+        <Route element={<PurchasesPage />} path="purchases" />
+        <Route element={<NewPurchasePage />} path="purchases/new" />
+        <Route element={<PurchaseDetailsPage />} path="purchases/:id" />
         <Route element={<NotFoundPage />} path="*" />
       </Route>
       <Route element={<Navigate replace to="/dashboard" />} path="/app" />

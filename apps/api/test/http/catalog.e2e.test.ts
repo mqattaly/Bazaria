@@ -106,14 +106,20 @@ class MemoryCategoriesRepository implements Pick<CategoriesRepositoryContract, '
 class MemoryProductsRepository implements Pick<ProductsRepositoryContract, 'list' | 'findById' | 'create' | 'update' | 'delete'> {
   private readonly products = new Map<string, Product>();
   private readonly productsWithStockHistory = new Set<string>();
+  private readonly productsWithPurchaseHistory = new Set<string>();
 
   reset(): void {
     this.products.clear();
     this.productsWithStockHistory.clear();
+    this.productsWithPurchaseHistory.clear();
   }
 
   retainStockHistory(id: string): void {
     this.productsWithStockHistory.add(id);
+  }
+
+  retainPurchaseHistory(id: string): void {
+    this.productsWithPurchaseHistory.add(id);
   }
 
   all(): Product[] {
@@ -185,6 +191,7 @@ class MemoryProductsRepository implements Pick<ProductsRepositoryContract, 'list
 
   async delete(id: string): Promise<boolean> {
     if (this.productsWithStockHistory.has(id)) throw databaseError('23503', 'stock_movements_product_id_fkey');
+    if (this.productsWithPurchaseHistory.has(id)) throw databaseError('23503', 'purchase_items_product_id_fkey');
     return this.products.delete(id);
   }
 }
@@ -340,6 +347,18 @@ describe('Products and categories API', () => {
       .delete(`/api/v1/products/${product.id}`)
       .expect(409);
     assert.equal(response.body.error.code, 'PRODUCT_HAS_STOCK_HISTORY');
+    assert.equal(await products.findById(product.id) !== null, true);
+  });
+
+  it('preserves Products referenced by immutable Purchase history', async () => {
+    const category = await createCategory();
+    const product = await createProduct(category.id, 'PURCHASE-HISTORY-01');
+    products.retainPurchaseHistory(product.id);
+
+    const response = await request(app.getHttpServer())
+      .delete(`/api/v1/products/${product.id}`)
+      .expect(409);
+    assert.equal(response.body.error.code, 'PRODUCT_HAS_PURCHASE_HISTORY');
     assert.equal(await products.findById(product.id) !== null, true);
   });
 

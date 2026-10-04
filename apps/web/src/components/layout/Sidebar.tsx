@@ -13,6 +13,8 @@ const navigationItems: readonly NavigationItem[] = [
   { label: 'محصولات', icon: 'box', to: '/products' },
   { label: 'دسته‌بندی‌ها', icon: 'sparkles', to: '/categories' },
   { label: 'سفارش‌ها', icon: 'sales', to: '/orders' },
+  { label: 'خریدها', icon: 'receipt', to: '/purchases' },
+  { label: 'تأمین‌کنندگان', icon: 'users', to: '/suppliers' },
   { label: 'مشتریان', icon: 'users', to: '/customers' },
   { label: 'انبار', icon: 'warehouse', to: '/inventory' },
   { label: 'گزارش‌ها', icon: 'chart' },
