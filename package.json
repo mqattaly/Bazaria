@@ -1,0 +1,35 @@
+{
+  "name": "bazaria",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Bazaria multi-tenant sales and distribution management platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "npm run build -w @bazaria/shared && concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @bazaria/api",
+    "dev:web": "npm run dev -w @bazaria/web",
+    "build": "npm run build -w @bazaria/shared && npm run build -w @bazaria/api && npm run build -w @bazaria/web",
+    "test": "npm run build -w @bazaria/shared && npm run test -w @bazaria/api && npm run test -w @bazaria/web",
+    "test:api": "npm run build -w @bazaria/shared && npm run test -w @bazaria/api",
+    "test:web": "npm run build -w @bazaria/shared && npm run test -w @bazaria/web",
+    "db:start": "node scripts/dev-db.mjs",
+    "db:bootstrap": "npm run db:bootstrap -w @bazaria/api",
+    "db:migrate": "npm run db:migrate -w @bazaria/api",
+    "db:seed:dev": "npm run db:seed:dev -w @bazaria/api",
+    "user:create": "npm run user:create -w @bazaria/api --",
+    "membership:grant": "npm run membership:grant -w @bazaria/api --",
+    "platform-admin:create": "npm run platform-admin:create -w @bazaria/api --"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7",
+    "embedded-postgres": "18.4.0-beta.17",
+    "pg": "^8.13.3"
+  }
+}
